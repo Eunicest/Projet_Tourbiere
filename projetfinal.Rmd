@@ -1,0 +1,1137 @@
+---
+title: "Projet final"
+author: "Eunice SITTI-MAWUBEJRO"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: 
+    keep_tex: true
+always_allow_html: true 
+---
+
+Une tourbière est une zone humide colonisée par la végétation et où s'accumule progressivement la tourbe (matériau organique issue de la décomposition incomplète de végétaux dans un milieu saturé en eau et pauvre en oxygène.). Bien qu'elles ne couvrent que 3% des terres émergées, les tourbières peuvent stocker entre 30 à 33% du carbone mondial; elles jouent donc un rôle important dans les enjeux climatiques. En plus de celà, les tourbières ont un impact important sur le cycle de l'eau, en prévenant par exemple des innondations. 
+Malgré leur importance, les tourbières restent peu connues, mal comprises et font l'objet d'exploitation. 
+
+Dans notre projet, nous travaillons sur la tourbière de La Guette à partir de données collectées dans le cadre du projet Junon, qui vise à développer un jumeau numérique de cet écosystème.
+Ce jumeau numérique permet de simuler le fonctionnement écologique de la tourbière à partir d’un ensemble de données environnementales, incluant notamment les flux de $CO_2$, de $CH_4$, l'évapotranspiration, la température du sol ou encore l’humidité.
+
+Notre objectif est de mener une analyse multidimensionnelle de ces données afin de mieux comprendre le fonctionnement de la tourbière. Pour ce faire, nous allons:
+
+-Nettoyer les données, en identifiant les valeurs manquantes et les valeurs aberrantes, puis en les imputant à l’aide de méthodes appropriées.\\
+
+-Réaliser une Analyse en Composantes Principales (ACP) en mettant en supplémentaires les variables $CO_2$, de $CH_4$, afin d’interpréter les grandes structures de variation et de repérer les variables les plus influentes dans le système étudié.\\
+
+-Analyser les composantes principales comme des séries temporelles, en étudiant leurs tendances, saisonnalités et anomalies à l’aide des outils vus en cours.\\
+
+Enfin, nous chercherons à modéliser les séries chronologiques de $CO_2$ et $CH_4$₄, en particulier à travers des régressions sur les composantes principales, pour mieux comprendre leur dynamique et leur sensibilité aux autres variables environnementales.
+
+
+
+### Chargement des bibliothèques 
+Nous commençons par charger nos library.
+
+```{r, message=FALSE,warning=FALSE}
+# chargement des biblithèques
+library(tseries) # pour étudier les séries tempo
+library(dygraphs) # pour des graphiques interactifs
+library(VIM) 
+library(corrplot) #pour afficher les corrélation
+library(missMDA) #pour faire des imputation
+library(xts)
+library(ggplot2) #pour des graphiques
+library(ade4) #pour faire l'acp
+library(devtools)
+library(factoextra)
+library(forecast)
+library(TSA)
+library(imputeTS)
+```
+
+### Chargement des données et exploration 
+
+
+```{r,warning=FALSE,message=FALSE,echo=TRUE}
+#chargement des données
+data1 = read.table("dataprojet1.txt",header = TRUE) 
+
+# résumé pour explorer
+summary(data1) 
+dim(data1)
+
+```
+la première colonne Date est affichée comme chaine de caractère. Il faudra réadapter le format pour que ce soit vu comme une date.  
+
+
+```{r,warning=FALSE,message=FALSE,echo=TRUE }
+#réadapter le format de la date
+date=as.Date(data1[,1])  #formatage de la date
+ 
+#refaire un dataframe avec le bon format de date et les variables
+donnees = data.frame(date,data1[,-1])
+summary(donnees) 
+dim(donnees)
+```
+
+### Exploration des variables d'intérêt 
+
+#### Graphique interactif de FCO2
+
+```{r, message=FALSE,warning=FALSE }
+attach(donnees)
+dataFCO2 = data.frame(date,FCO2) # créer un dataframe
+
+# trace le graphe 
+dygraph(dataFCO2,main="Flux de CO2 dans la tourbière") %>% 
+  dySeries("FCO2", label = "FCO2", color = "blue")%>%
+  dyAxis("y", label = "Valeurs") %>%
+  dyOptions(strokeWidth = 1.5) %>%  # Epaisseur des traits
+  dyLegend(show = "always")%>% 
+  dyRangeSelector()  # Permet de selectionner l'intervalle
+```
+
+#### Graphique interactif de FCH4
+
+```{r, message=FALSE,warning=FALSE }
+dataFCH4 = data.frame(date,FCH4) # créer un dataframe
+
+# trace le graphe 
+dygraph(dataFCH4,main="Flux de CH4 dans la tourbière")%>% 
+  dySeries("FCH4", label = "FCH4", color = "blue")%>%
+  dyAxis("y", label = "Valeurs") %>%
+  dyOptions(strokeWidth = 1.5) %>%  # Epaisseur des traits
+  dyLegend(show = "always")%>% 
+  dyRangeSelector()  # Permet de selectionner l'intervalle
+```
+
+#### Graphique interactif de FCO2 et FCH4 ensemble
+
+```{r, message=FALSE,warning=FALSE }
+dataFCO2FCH4 = data.frame(date,FCH4,FCO2)
+dygraph(dataFCO2FCH4,main="Flux de CO2 et de CH4 dans la tourbière")
+```
+  
+
+
+Les flux varient beaucoup; que ce soit pour FCO2 que pour FCH4. Mais, nous ne pouvons pas analyser proprement ces graphique car il y a beaucoup de valeurs manquantes.  
+
+
+#### visualisation des manquants 
+
+
+```{r}
+natot = sum(is.na(donnees)) #nbre de valeurs manquantes au total
+cat("le nombre de valeurs manquantes au total est  :",natot, "\n")
+```
+Dans le jeu de données, il y a au total, 14885 manquants.
+
+
+### Proportion de na par variable
+
+```{r}
+sort(colSums(is.na(donnees))) #on classe les variables par nbre de valeurs manquantes
+```
+
+```{r}
+na_prop <- sort(colMeans(is.na(donnees[,-1])))
+na_prop
+barplot(na_prop, las = 2, col = c(1:60), main = "Proportion de valeurs manquantes par variable", 
+        ylab = "Proportion")
+```
+
+
+et la variable qui a le plus de manquants est lgt.pz_wo_WTD avec 941 NA. 
+
+#### Les variables d'intérêt
+Interessons nous à présent aux variables clés qui nous intéressent.
+
+```{r }
+naFCH4<- round((sum(is.na(FCH4)) / nrow(donnees))*100,2) #proportion manquants FCH4
+naFCO2<- round((sum(is.na(FCO2)) / nrow(donnees))*100,2) #proportion manquants FCO2
+
+cat("la proportion de FC02 manquant est :",naFCO2, "\n")
+cat("la proportion de FCH4 manquant est :",naFCH4, "\n")
+```
+
+```{r }
+aggr(donnees[, c("FCO2", "FCH4")],numbers=TRUE )
+```
+  
+  Sur ce graphique, chaque barre indique une configuration de présence ou d’absence
+des deux variables. Voici ce que l’on observe :
+— 45,3% des observations ont à la fois F CO2 et F CH4 présents.
+— 30% des observations présentent l’absence simultanée des deux.
+— 20,3% des cas ont F CH4 manquant alors que F CO2 est présent
+— 4,4% des cas ont F CO2 manquants et F CH4 présent
+Ceci renforce la nécessité de choisir une méthode d’imputation adaptée, capable de
+prendre en compte la structure des données.
+
+
+
+### Utilisation de missMDA
+
+plus haut, nous avons vu que notre jeu de données comportent énormément de valeurs manquantes. Ce qui constistue un problème pour la suite de nos analyses (notamment l'acp). Car pour bien faire notre analyse, nous avons besoin de jeux de données complet (sans manquant). C'est pour cela que , nous allons utiliser les outils du package missMDA pour imputer efficacement les valeurs manquantes en s'appuyant sur une approche par ACP. 
+
+
+```{r }
+
+#estimer le nbre de composante principale à utliser pour imputer efficacement les na 
+
+nb1 <- estim_ncpPCA(donnees[,-1], method = "Regularized")$ncp 
+
+#on fait l'imputation
+
+dataimp <- imputePCA(donnees[,-1], ncp = nb1, method = "Regularized")$completeObs
+
+```
+
+#### petits réglages 
+
+Nous utilisons le format dataframe pour notre jeu de données parce que nous sommes habitués à utiliser ce format.  
+
+```{r }
+#detach(donnees)
+class(dataimp)
+dataimp = data.frame(date,dataimp)
+class(dataimp)
+#dim(data_impute)
+dim(dataimp)
+dim(donnees)
+
+summary(dataimp)
+```
+
+
+Vérifions qu'il n'y a plus de na
+
+```{r}
+dim(dataimp)
+sum(is.na(dataimp))
+
+```
+
+####vérification visuelle de l'imputation
+
+```{r }
+s_FCO2 <- xts(dataimp[, "FCO2"],order.by = date)
+s_FCH4 <- xts(dataimp[, "FCH4"],order.by = date)
+dygraph(s_FCO2, main = "Imputation PCA - FCO2")  
+```
+
+
+```{r }
+dygraph(s_FCH4, main = "Imputation PCA - FCH4") 
+```
+
+
+Les gros vides représentant les NA ne sont plus présents sur les graphiques;ils ont l'air harmonieux.Pour aller plus loin, regardons le ggplot.
+
+```{r }
+
+ggplot_na_imputations(donnees[,-1]$FCO2, s_FCO2)
+```
+
+
+```{r }
+ggplot_na_imputations(donnees[,-1]$FCH4, s_FCH4)
+```
+Les points rouges semblent s'intégrés aux différents graphique de manière harmonieuse. Ce qui peut être un bon signe.  
+
+
+#### vérifions avec des outils plus  sophistiqués  
+
+
+```{r }
+library(missForest)  # pour prodNA()
+
+set.seed(123)
+
+# 10% de données manquantes artificielles
+dondate = dataimp[,-1]
+data_na <- prodNA(dondate, noNA = 0.1)
+
+# Imputation
+res <- imputePCA(data_na, ncp = 3, method = "Regularized")
+
+# Comparaison
+true_values <- dondate[is.na(data_na)]
+imputed_values <- res$completeObs[is.na(data_na)]
+
+# Erreur quadratique moyenne
+rmse <- sqrt(mean((true_values - imputed_values)^2))
+print(rmse)
+```
+
+
+```{r }
+summary(dataimp$FCO2)
+summary(donnees$FCO2)
+
+sd(dataimp$FCO2, na.rm = TRUE)
+sd(donnees$FCO2, na.rm = TRUE)
+
+```
+
+
+```{r }
+summary(dataimp$FCH4)
+summary(donnees$FCH4)
+
+sd(dataimp$FCH4, na.rm = TRUE)
+sd(donnees$FCH4, na.rm = TRUE)
+
+```
+
+Les variables gardant globalement les mêmes valeurs extrêmes et comme on a un rmse relativement bas, on peut dire que l'imputation a été réussi.  
+
+
+
+```{r}
+donnees_st <- xts(dataimp, order.by = date) # Version time serie
+```
+
+```{r}
+attach(dataimp)
+
+```
+
+#### enregistrement des données completées
+```{r }
+save(dataimp, file = "mes_donnees1.RData")
+
+```
+
+### Partie ACP  
+
+Nous voulons faire une ACP pour mieux comprendre les dynamiques dans notre jeu de données.
+Sachant que les variables n'ont pas toutes les mêmes unités et aussi sachant qu'il y a quelques valeurs abérrantes, nous avons pensés à faire une acp normée mais, regardons les variances et les écarts type pour confirmer.
+
+```{r }
+print(apply(dataimp[,-1],2,sd),3)
+```
+
+
+```{r }
+sdmen <- apply(dataimp[,-1],2,sd)
+max(sdmen)/min(sdmen) 
+```
+
+
+# Acp normé
+
+```{r }
+acpj <- dudi.pca(dataimp[,-c(1,3,4)], scale = TRUE, scannf = F, nf =7) #ACP normée sans date, FCO2 et FCH4
+class(acpj)
+names(acpj)
+head(acpj$li)  ## Coordonnees des individus suivant les axes factoriels
+```
+
+#### inertie
+
+```{r }
+inertie <- inertia.dudi(acpj, col.inertia = F, row.inertia = T) ## ici on fait acp des lignes
+names (inertie)
+inertie$tot.inertia
+```
+
+#### tracons l'ébouli des valeurs propres  
+
+```{r }
+barplot(acpj$eig,names.arg=1:length(dataimp[,-c(1,3,4)])) #tracé de l'éboulis des valeurs propres
+```
+  
+  
+Avec la règle du coude, on a que avec les 3 premier axes, on capte 78,21% d'inertie et avec 4 axes, nous arrivons à expliquer 84,90%. Commencons d'abord avec les 3 premiers axes.  
+
+#### la corrélation entre les variables
+
+Nous voulons voir s'il y a une dynamique dans les données.   
+
+```{r}
+
+# la correlation entre les variables 
+
+mcorr<-as.matrix(cor(dataimp[,-1], use = "complete.obs"))  ## Matrice de correlation en ignorant les valeurs manquantes
+corrplot(mcorr,type="upper",tl.cex=0.6, order="hclust",tl.col="black",tl.srt=100 ) 
+
+```
+
+
+
+## Les cercles de corrélation  
+
+
+```{r }
+s.corcircle(acpj$co,clabel = 0.5 ,sub = " cercle de corrélation 1") # plan principal
+title ( "ACP normée: 1-2")
+```
+
+
+```{r }
+s.corcircle(acpj$co,yax=3,clabel = 0.5,sub = " cercle de corrélation 2")
+title ( "ACP  normée: 1-3")
+```
+
+
+```{r }
+s.corcircle(acpj$co,xax=2,yax=3,clabel = 0.5,sub = " cercle de corrélation 3")
+title ( "ACP normée: 2-3")
+```
+
+  
+  
+En somme, l'axe 1  nous pouvons dire que d’un coté l’axe 1 capte les phénomènes liés à la dynamique de l’eau (hydrologique) et de l’autre, il capte les phénomènes thermiques.
+L'axe 2 quant à lui est lié  aux dynamisme hydrique dans la tourbière. Et pour finir,  L’axe 3 oppose les phénomènes atmosphériques (vent et humidité) aux phénomènes thermo-biologiques(activité des plantes, evapotranspiration).  
+
+### La projection des variables supplementaire (FCO2 et FCH4) sur les axes
+
+Nous cherchons à voir comment les GES se comportent dans la tourbière. A quelles variables sont t ils liés? a quelles variables sont t il opposés?
+
+
+```{r}
+var_sup <- scale(dataimp[,c(3,4)]) #centre et réduit
+cor_sup <- cor(var_sup,acpj$li )  # corrélation avec les axes
+head(cor_sup)
+```
+
+
+```{r}
+
+
+# Ajout de FCO2 et FCH4 au cercle de correlation suivant l'axe 1 et 2
+
+s.corcircle(acpj$co,xax=1,yax=2,clabel=0.6 , sub ="Cercle 1" )  # Cercle des corrélations
+
+arrows(0, 0, cor_sup[1,1], cor_sup[1,2], col = "red", length = 0.1)   #pour faire la flèche 
+text(cor_sup[1,1], cor_sup[1,2], labels = "FCO2", pos = 3, col = "red") #mettre le texte
+
+arrows(0, 0, cor_sup[2,1], cor_sup[2,2], col = "blue", length = 0.1)
+text(cor_sup[2,1], cor_sup[2,2], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 1 et 2")
+
+# Ajouter les flèches des variables supplémentaires sur axes 1 et 3
+
+s.corcircle(acpj$co,xax=1,yax=3,clabel=0.5, sub ="Cercle 2")
+
+arrows(0, 0, cor_sup[1,1], cor_sup[1,3], col = "red", length = 0.1)
+text(cor_sup[1,1], cor_sup[1,3], labels = "FCO2", pos = 3, col = "red")
+
+arrows(0, 0, cor_sup[2,1], cor_sup[2,3], col = "blue", length = 0.1)
+text(cor_sup[2,1], cor_sup[2,3], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 1 et 3")
+
+
+# Ajouter les flèches des variables supplémentaires sur axes 2 et 3
+
+s.corcircle(acpj$co,xax=2,yax=3,clabel=0.6, sub ="Cercle 3") 
+
+arrows(0, 0, cor_sup[1,2], cor_sup[1,3], col = "red", length = 0.1)
+text(cor_sup[1,2], cor_sup[1,3], labels = "FCO2", pos = 3, col = "red")
+
+arrows(0, 0, cor_sup[2,2], cor_sup[2,3], col = "blue", length = 0.1)
+text(cor_sup[2,2], cor_sup[2,3], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 2 et 3")
+```
+
+
+ 
+#### Corrélation entr axes et variables 
+
+Pour mieux interpréter, regardons la corrélation entre les axes et les variables.
+
+
+```{r}
+
+cc<-cor(dataimp[,-c(1,3,4)],acpj$li) # Correlation entre les axes factoriels et les variables
+head(cc)
+
+```
+
+- A l'axe 1 
+
+```{r}
+seuil=0.5
+cor1<-cc[abs(cc[,1])>=seuil,,drop=F]
+nrow(cor1)
+rownames(cor1)
+```
+
+- A l'axe 1 négativement 
+
+```{r}
+cor1N<-cc[cc[,1]<=(-seuil),,drop=F]
+nrow(cor1N)
+rownames(cor1N)
+
+```
+ 
+- A l'axe 1 positivement 
+
+```{r}
+cor1p<-cc[cc[,1]>=(seuil),,drop=F]
+nrow(cor1p)
+rownames(cor1p)
+```
+
+ 
+ - A l'axe 2
+ 
+```{r}
+
+cor2<-cc[abs(cc[,2])>=seuil,,drop=F]
+nrow(cor2)
+rownames(cor2)
+```
+
+
+- A l'axe 2 négativement 
+
+```{r}
+cor2N<-cc[cc[,2]<=(-seuil),,drop=F]
+nrow(cor2N)
+rownames(cor2N)
+
+```
+ 
+- A l'axe 2 positivement 
+
+```{r}
+cor2p<-cc[cc[,2]>=(seuil),,drop=F]
+nrow(cor2p)
+rownames(cor2p)
+
+```
+
+ A l'axe 3 
+ 
+```{r}
+
+cor3<-cc[abs(cc[,3])>=seuil,,drop=F]
+nrow(cor3)
+rownames(cor3)
+
+```
+
+- A l'axe 3 négativement 
+
+```{r}
+cor3N<-cc[cc[,3]<=(-seuil),,drop=F]
+nrow(cor3N)
+rownames(cor3N)
+
+```
+ 
+- A l'axe 3 positivement 
+
+```{r}
+cor3p<-cc[cc[,3]>=(seuil),,drop=F]
+nrow(cor3p)
+rownames(cor3p)
+
+```
+
+#### Correlations des FCO2 et CH4 axes suivant les 3 axes 
+
+```{r}
+cor_sup[,1:4]
+```
+
+
+#### Commentaire  
+
+En résumé, nous observons que FCO2 présente une corrélation de 0.56 avec l’axe 1 et de 0.52 avec l’axe 3. Pour FCH4, la corrélation est plus marquée avec l’axe 3 (0.62) qu’avec l’axe 1 (0.43). Les deux variables sont très peu présent en ce qui concerne l’axe 2.L’axe 1, que nous avons interprété comme opposant les variables thermiques (température du sol, évapotranspiration) aux variables hydriques (teneur en eau du sol, profondeur de la nappe), semble fortement associé au flux de CO2. Cette corrélation positive suggère que les variations thermiques de la tourbière ont un impact sur le flux de CO2. Le flux est surement réduit lorsque la température augmente. L’axe 3, représentant l’opposition entre phénomènes atmosphériques (vent, rayonnement à ondes longues) et chaleur sensible ou rayonnement solaire, est corrélé à la fois à FCO2 et FCH4. Cette association, plus marquée pour FCH4, indique que les conditions atmosphériques, telles que la circulation du vent et l’humidité de l’air, pourraient influencer la dynamique d’émission de ces gaz à effet de serre. Ces résultats confirment l’importance de considérer à la fois les phénomènes thermiques et les conditions atmosphériques pour expliquer les variations des flux de CO2 et CH4
+ dans la tourbière.
+
+#### Représentons le plan factoriel, barycentré sur les mois  
+
+
+```{r }
+mois <-format(date, format = "%m")
+mois1 <- factor(mois, 
+               levels = sprintf("%02d", 1:12),
+               labels = c("Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+                          "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"),
+               ordered = TRUE)
+```
+
+
+```{r }
+ #  Représentation graphique axe 1-3 : groupé par mois
+s.class(acpj$li[,c(1,3)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels", 
+        csub = 0.3)
+```
+
+
+```{r }
+ #  Représentation graphique axe 1-2 : groupé par mois
+s.class(acpj$li[,c(1,2)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels", 
+        csub = 0.3)
+```
+
+
+```{r }
+ #  Représentation graphique axe 2-3 : groupé par mois
+s.class(acpj$li[,c(2,3)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels", 
+        csub = 0.5)
+```
+
+#### Représentons le plan factoriel, barycentré sur les années  
+
+
+```{r }
+annee <-format(date, format = "%Y")
+annee1 <- factor(annee, 
+               levels = c("2017", "2018", "2019", "2020", "2021"),
+               ordered = TRUE)
+```
+
+
+```{r }
+ #  Représentation graphique axe 1-2 : groupé par année
+s.class(acpj$li[,c(1,2)], fac = annee1, col = rainbow(length(unique(annee1))), 
+        sub = "Plan factoriel - Barycentres annuels", 
+        csub = 0.3)
+```
+
+
+```{r }
+ #  Représentation graphique axe 1-3 : groupé par année
+s.class(acpj$li[,c(1,3)], fac = annee1, col = rainbow(length(unique(annee1))), 
+        sub = "Plan factoriel - Barycentres annuels", 
+        csub = 0.3)
+```
+
+
+
+```{r }
+ #  Représentation graphique axe 2-3 : groupé par année
+s.class(acpj$li[,c(2,3)], fac = annee1, col = rainbow(length(unique(annee1))), 
+        sub = "Plan factoriel - Barycentres annuels", 
+        csub = 0.3)
+```
+
+
+### Pour aller plus loin 
+
+Nous avons inclus la composante 4 dans nos analyse pour voir si elle nous apporte plus d'information. Cet ajout n'est pas démésurée car avec les 4 axes, nous arrivons à capter plus de 80% de l'information disponible ce qui est énorme.  
+
+
+ - A l'axe 4
+ 
+```{r}
+
+cor4<-cc[abs(cc[,4])>=seuil,,drop=F]
+nrow(cor4)
+rownames(cor4)
+```
+
+
+- A l'axe 4 négativement 
+
+```{r}
+cor4N<-cc[cc[,4]<=(-seuil),,drop=F]
+nrow(cor4N)
+rownames(cor4N)
+
+```
+ 
+- A l'axe 4 positivement 
+
+```{r}
+cor4p<-cc[cc[,4]>=(seuil),,drop=F]
+nrow(cor4p)
+rownames(cor4p)
+
+```
+
+```{r }
+s.corcircle(acpj$co,xax=1,yax=4,clabel = 0.5)#,sub = " cercle de corrélation") 
+title ( "ACP normée: 1-4")
+```
+
+
+```{r }
+s.corcircle(acpj$co,xax=2,yax=4,clabel = 0.5)#,sub = " cercle de corrélation") 
+title ( "ACP normée: 2-4")
+```
+
+
+```{r }
+s.corcircle(acpj$co,xax=3,yax=4,clabel = 0.5)#,sub = " cercle de corrélation") 
+title ( "ACP normée: 3-4")
+
+```
+
+   
+#### Commentaire  
+
+Sur chacun des ces 3 cercles, nous distinguons peu de variables fortement corrélées à l’axe 4 et bien représentées. En regardant les corrélations, on se rend compte que seules 5 variables présentent une corrélation en valeur absolue supérieure à 0.5.   
+— Relative humidity (RH), corrélée négativement à l’axe,  
+— et des variables de Soil heat flux (G), corrélées positivement.  
+Il apparait que cet axe oppose donc la chaleur du sol à l’humidité de l’air. Cela pourrait refléter des phénomènes plus subtils liés aux échanges de chaleur dans la tourbière. Cependant, le faible nombre de variables bien représentées indique que l’axe 4 apporte moins de structure interprétable que les axes précédents. Son ajout reste utile pour compléter l’inertie expliquée, mais son intérêt est limité et doit être interprété avec prudence.  
+
+
+
+```{r }
+
+# Ajout de FCO2 et FCH4 au cercle de correlation suivant l'axe 1 et 4
+
+s.corcircle(acpj$co,xax=1,yax=2,clabel=0.6 , sub ="Cercle 1-4" )  # Cercle des corrélations
+
+arrows(0, 0, cor_sup[1,1], cor_sup[1,4], col = "red", length = 0.1)   #pour faire la flèche 
+text(cor_sup[1,1], cor_sup[1,4], labels = "FCO2", pos = 3, col = "red") #mettre le texte
+
+arrows(0, 0, cor_sup[2,1], cor_sup[2,4], col = "blue", length = 0.1)
+text(cor_sup[2,1], cor_sup[2,4], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 1 et 4")
+
+# Ajouter les flèches des variables supplémentaires sur axes 2 et 4
+
+s.corcircle(acpj$co,xax=1,yax=3,clabel=0.5, sub ="Cercle 2")
+
+arrows(0, 0, cor_sup[1,2], cor_sup[1,4], col = "red", length = 0.1)
+text(cor_sup[1,2], cor_sup[1,4], labels = "FCO2", pos = 3, col = "red")
+
+arrows(0, 0, cor_sup[2,2], cor_sup[2,4], col = "blue", length = 0.1)
+text(cor_sup[2,2], cor_sup[2,4], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 2 et 4")
+
+
+# Ajouter les flèches des variables supplémentaires sur axes 3 et 4
+
+s.corcircle(acpj$co,xax=2,yax=3,clabel=0.6, sub ="Cercle 3") 
+
+arrows(0, 0, cor_sup[1,3], cor_sup[1,4], col = "red", length = 0.1)
+text(cor_sup[1,3], cor_sup[1,4], labels = "FCO2", pos = 3, col = "red")
+
+arrows(0, 0, cor_sup[2,3], cor_sup[2,4], col = "blue", length = 0.1)
+text(cor_sup[2,3], cor_sup[2,4], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 3 et 4")
+```
+
+  
+  
+#### Commentaire  
+
+Sur l’ensemble des cercles, les flèches de FCO2 et FCH4 apparaissent courtes et centrées (notamment sur le cercle 2.20). Cela suggère que ces variables sont peu corrélées à cet axe et donc difficile à interpréter. Sur la figure 2.19, la flèche de FCO2 se projette plus sur l’axe 1. Cette proximité avec l’axe 1 renforce nos analyses plus haut disant que FCO2 est en opposition avec les phénomènes thermiques ( notamment TW et TS). En revanche, la projection sur l’axe 4 reste faible. De plus, nous avons calculé la corrélation entre les flux de GES et la composante 4. Nous avons obtenu :  
+
+— FCO2 et FCH4 sont corrélées négativement à l’axe,  
+— la corrélation de FCH4 est-0.41 tandis que celle de FCO2 est-0.13  
+
+Ces faibles valeurs confirment que l’axe 4 n’apporte pas d’information supplémentaire majeure sur la répartition de nos variables supplémentaires. En particulier, il n’aide pas à distinguer clairement les flux de CO2 et CH4.
+
+
+```{r }
+ #  Représentation graphique axe 1-4 : groupé par mois
+s.class(acpj$li[,c(1,4)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels", 
+        csub = 0.3)
+```
+
+
+```{r }
+ #  Représentation graphique axe 2-4 : groupé par mois
+s.class(acpj$li[,c(2,4)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels", 
+        csub = 0.3)
+```
+
+
+```{r }
+ #  Représentation graphique axe 3-4 : groupé par mois
+s.class(acpj$li[,c(3,4)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels", 
+        csub = 0.3)
+```
+
+
+  
+  
+#### Commentaire  
+
+Ces graphiques représentent les barycentres mensuels selon les axes (1 à 4). Sur le plan défini par les axes 1 et 4, nous distinguons une séparation claire suivant l’axe 1 entre les mois chauds à gauche et les mois froids à droite. Cela confirme que l’axe 1 capte fortement les dynamiques thermiques. Les mois de transition comme Mai et Octobre se trouvent beaucoup plus au centre, ce qui est cohérent. En revanche, l’axe 4 ne semble pas apporter d’informations sur les mois. En effet, nous avons quelques ellipses qui s’étirent légèrement vers la vertical comme celui de Avril mais, pas de séparation claire. Cette orientation vers la verticale pourrait suggérer des conditions spécifiques opposant le flux de chaleur du sol et d’humidité. Le plan défini par les axes 1 et 4, montre quant à elle une configuration différente. Les mois chauds (Juillet, Juin) sont regroupés vers le centre gauche, tandis que Septembre, Novembre et Décembre sont sur la droite du plan. Cependant, ce plan n’offre pas une séparation nette des mois. On note aussi que les mois comme septembre, Decembre, Novembre se superposent et cachent totalement d’autre comme Octoble,Janvier,ce qui complique l’interprétation.Le plan 3-4 égalament ne présente aucune séparation claire et les mois se superposent.La majorité des mois se regroupent au centre et il n’y a aucune structure interessante.En résumé, l’ajout de la composante 4 permet de raffiner le pourcentage d’inertie mais,sa contribution aux interprétations n’est pas aussi claire que celle des premier axes.
+
+```{r }
+ #  Représentation graphique axe 1-4 : groupé par année
+s.class(acpj$li[,c(1,4)], fac = annee1, col = rainbow(length(unique(annee1))), 
+        sub = "Plan factoriel - Barycentres annuels", 
+        csub = 0.3)
+```
+
+
+```{r }
+ #  Représentation graphique axe 2-4 : groupé par année
+s.class(acpj$li[,c(2,4)], fac = annee1, col = rainbow(length(unique(annee1))), 
+        sub = "Plan factoriel - Barycentres annuels", 
+        csub = 0.3)
+```
+
+
+```{r }
+ #  Représentation graphique axe 3-4 : groupé par année
+s.class(acpj$li[,c(3,4)], fac = annee1, col = rainbow(length(unique(annee1))), 
+        sub = "Plan factoriel - Barycentres annuels", 
+        csub = 0.3)
+```
+
+### Commentaire  
+
+
+Ici, nous représentons les résultats de nos ACP regroupés par année. Sur les plans des axes 1-4 et 3-4, on remarque que toutes les années se superposent. Sur le plan des axes 3-4, les années se regroupent au centre et la plus visible est 2021. On remarque aussi que sur cette figure, les ellipses ont l’air d’être des cercles et il y a beaucoup de dispersion des points dans tous les sens. Cela suggère qu’il n’ y a pas de différenciation notable entre ces années sur ce plan. Aussi, cela limite fortement l’interprétation et souligne que l’axe 4 n’apporte pas d’information pertinente ici. Contrairement aux 2 autres figures, le plan des axes 2-4 montre une distinction claire de l’année 2019. Cette dernière a son éllipse qui s’étire beaucoup plus sur l’horizontal (l’axe 2), cela suggère que l’année 2019 traduit des conditions hydrologiques très différentes des autres. Ce résultat est cohérent avec nos analyses précédentes. En somme, si l’ajout de l’axe 4 augmente l’inertie expliquée,il n’apporte qu’une contribution limitée à la différenciation des années. Seul le plan 2-4 permet de révéler une information intéressante, en isolant l’anomalie hydrologique de 2019.
+
+
+```{r }
+
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```
+
+
+```{r }
+
+```

@@ -1,0 +1,2871 @@
+\documentclass[a4paper,12pt]{report}%
+\usepackage[utf8]{inputenc}%
+\usepackage[T1]{fontenc}%
+\usepackage[francais]{babel}% 
+\usepackage{textcomp}% 
+\usepackage{mathtools,amssymb,amsthm}% 
+\usepackage{lmodern}% 
+\usepackage{geometry}% 
+\usepackage{graphicx}% 
+\usepackage{xcolor}% 
+\usepackage{array}% 
+\usepackage{pdfpages}
+\usepackage{calc}% 
+\usepackage{titletoc}% 
+\usepackage{fancyhdr}% 
+\usepackage{titling}% 
+\usepackage{enumitem}% 
+\usepackage{hyperref}% 
+\usepackage{titling}
+\usepackage{multirow}
+\usepackage{ragged2e}
+\usepackage{caption}
+\usepackage{tabularx} 
+\usepackage{float}
+\geometry{margin= 2.5cm}
+\hypersetup{pdfstartview=XYZ}%
+\usepackage{titlesec}%
+\hypersetup{
+  pdfstartview=XYZ,
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  filecolor=black,
+  urlcolor=blue,
+  pdfborder={0 0 0}
+}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstset{
+  language=R,
+  basicstyle=\ttfamily\small,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  numberstyle=\tiny\color{gray},
+  numbers=left,
+  stepnumber=1,
+  numbersep=5pt,
+  backgroundcolor=\color{gray!10},
+  frame=single,
+  breaklines=true,
+  captionpos=b
+}
+
+
+
+
+
+\begin{document}
+\begin{titlepage}
+	\begin{flushleft}
+ 	   \includegraphics[width=4cm]{univlogo.png}
+	 \end{flushleft}
+
+	\centering
+	\vspace*{1cm}
+	{\Large \textbf{MASTER 1 MATHÉMATIQUES\\APPLIQUÉES, STATISTIQUE}}\\[1cm]
+	{\large 2024 -- 2025}\\[2cm]
+
+ 	{\Huge \textbf{Projet en Mathématiques appliquées}}\\[0.5cm]
+ 	{\LARGE \textit{Analyse multidimensionnelle des données de tourbières.}}\\[2cm]
+
+	\begin{flushleft}
+ 	   \textbf{Encadrante :} Sophie Jacquot\\[0.5cm]
+	    \textbf{Étudiants :} Kokou TETE et Eunice SITTI-MAWUBEJRO
+	 \end{flushleft}
+
+	\vfill
+
+ 	\textit{Université d'Orléans}\\
+ 	\textit{Année universitaire 2024–2025}
+
+\end{titlepage}
+
+\clearpage
+\chapter*{Remerciements}
+
+Nous tenons à exprimer notre profonde gratitude à Madame \textsc{Sophie JACQUOT},  notre encadrante, pour son soutient constant, la justesse de ses conseils, sa disponibilité sans faille et le temps précieux qu'elle nous a consacré tout au long de ce projet. Son accompagnement a été déterminant à chaque étape de notre travail. \newline
+Nous adressons également nos sincères remerciements à  Monsieur \textsc{Thomas HABERKORN}, directeur de notre master ainsi que tous nos profs. Leur engagement et la qualité de leurs enseignements ont grandement contribué à notre formation et à la réalisation de ce projet.
+
+
+\clearpage
+\tableofcontents
+
+\clearpage
+\part*{Introduction}
+\addcontentsline{toc}{chapter}{Introduction} 
+
+\begin{justify}
+Les tourbières sont des lieux continuellement saturés en eau, où se développe une faune et une flore spécifiques à elles. La conséquence de la saturation en eau du sol est son appauvrissement en oxygène, une situation dite anoxique. Avec le travail du temps, au fil des années et des décennies cette situation est ainsi favorable à l’accumulation d’une matière organique appelée la tourbe. Grâce à la tourbe, les tourbières ont la capacité de stocker du carbone. Ce sont des zones humides particulières, des écosystèmes ayant un rôle essentiel dans la régulation du climat. Cependant, leur fonctionnement reste mal compris et elles subissent des dégradations causées par l’Homme et l’activité humaine. En fonction des régions, on peut trouver des comportements qui pourraient déstabiliser ces écosystèmes assez particuliers. Au XXe siècle en Norvège par exemple, elles étaient asséchées pour en faire des surfaces cultivables. En Ecosse par contre, la tourbe est parfois prélevée et utilisée comme combustible dans des cheminées pour se réchauffer ; et d’autres encore la prélèvent pour en faire du terreau. On comprend ainsi que l’utilisation de la tourbe par l’homme ne date pas d’hier. Elle a été un matériau utilisé pour diverses activités ou pour résoudre différentes problématiques.  Autant d’actions qui avec le temps pourraient considérablement nuire au fonctionnement des tourbières. \newline
+					
+Dans le cadre de notre  projet, nous travaillons sur la tourbière de La Guette.  La tourbière de la Guette est une étendue de 1300 m autour de la rivière la Guette. Sa superficie est de 23 ha et présente une profondeur de tourbe allant de 80 cm à 1,80 m par endroit. Il contient une grande variété de faune et de flore. Sa taille et sa biodiversité en font donc un bon sujet d’analyse.  Nous allons étudier cette tourbière à l’aide  du programme Junon; programme qui vise à développer un jumeau numérique de cet écosystème. Ce jumeau numérique permet de simuler le fonctionnement écologique de la tourbière à partir d’un ensemble de données environnementales variées, incluant entre autres les flux de CO2, de CH4, l’évapotranspiration, la température du sol ou encore l’humidité.			
+Notre objectif est de mener une analyse multidimensionnelle et temporelle de ces données afin de mieux comprendre le fonctionnement de la tourbière. \newline
+					
+Notre démarche se résume en ces points :
+					
+- Nettoyer les données, en identifiant les valeurs manquantes et les valeurs aberrantes, puis en les imputant à l'aide de méthoses appropriées. \newline
+					
+- Réaliser une Analyse en Composantes Principales (ACP) en mettant en supplémentaires les variables CO2, de CH4, afin d’interpréter les grandes structures de variation et de repérer les variables les plus influentes dans le système étudié. \newline
+					
+- Analyser les composantes principales comme des séries temporelles, en étudiant leurs tendances, saisonnalités et anomalies à l'aide des vus en cours. \newline
+					
+Enfin, nous chercherons à modéliser les séries chronologiques de CO2 et CH4, en particulier à travers des régressions sur les composantes principales, pour mieux comprendre leur dynamique et leur sensibilité aux autres variables environnementales.
+
+\end{justify}
+\newpage
+
+\part{Contexte}
+\chapter*{}
+\section{Qu'est-ce qu'une tourbière? }
+
+\begin{justify}
+
+Les tourbières qui font l’objet de notre document ont longtemps été perçues comme des lieux insalubres. Parfois confondus aux marais et aux marécages, elles ont fait l’objet de plusieurs dégradations par l’homme. La question que l’on se pose est de savoir si ces lieux sont réellement insalubres. En réalité, cette perception est erronée et vient principalement de l’ignorance qu’on peut avoir de ces écosystèmes, de leur rôle et de leurs utilités écologiques. Pour mieux comprendre les données sur lesquelles nous travaillons, il a été nécessaire d’améliorer notre compréhension des tourbières, de leur fonctionnement et de leur importance. Qu'est ce donc une tourbière ? \newline					
+
+
+ Une tourbière est une zone humide continuellement saturée en eau au contraire des marais qui peuvent s’assécher à des moments de l’année. Il s'y développe une végétation speécifique. Ce milieu constamment saturé d’eau entraîne la pauvreté du sol en oxygène.  Cet élément cause une  décomposition incomplète des végétaux et des animaux morts qui se retrouvent sur ce sol. Cette accumulation de végétaux et de faune morte au fil des décennies donne naissance à une matière organique appelée la tourbe.  Et c'est  grâce à cette matière organique particulière que les tourbières jouent un rôle important dans les enjeux climatiques. \newline
+
+Les tourbières peuvent agir ou être utiles de différentes façons et on va le découvrir dans les prochaines lignes. 
+En effet, elles peuvent agir comme puits de carbone ( en absorbant du carbone et le stockant) ou au contraire comme source de carbone (en participant à l'émission de carbone). Même si elles ne couvrent que 3\% des terres émergées, elles peuvent stocker entre 30 et 33\% du carbone mondial. En plus de cela, elles ont un impact important sur le cycle de l'eau, en prévenant par exemple des inondations. On peut aussi évoquer le rôle qu’elles peuvent avoir dans la documentation des espèces végétales comme animales. En effet la biomasse végétale ou animale ne s’étant pas entièrement décomposée, on y retrouve de l’ADN de différentes espèces qui s’y est accumulé avec le temps. 
+Malgré leur importance, ces écosystèmes restent mal compris et continuent d'être menacés par le drainage,l’exploitation agricole et le changement climatique. Il est donc essentiel de mieux les connaître pour les préserver efficacement.
+
+
+\end{justify}
+
+\section{Programme junon}
+
+
+Selon le site internet de l’institut d’études avancées du Val de Loire, le Studium, Junon est "un ambitieux programme de développement"  d’un pôle de recherche numérique sur l’environnement continental en région Centre Val de Loire. Il est piloté par le Bureau de Recherche Géologiques et Minières, en association avec différents organismes dont des organismes de recherche, des laboratoires, l’université d'Orléans entre autres. Il s'inscrit dans un ensemble d’actions plus large visant à concevoir des services numériques visant à améliorer le suivi et la compréhension de l’environnement dans le but de permettre une meilleure gestion des ressources naturelles. Dans cette optique, les chercheurs développent ainsi des jumeaux numériques sur l'eau, le sol, et l'air.   	
+Le programme Junon vise ainsi à créer un jumeau numérique (qui est une réplique virtuelle) d'un objet, d'un projet, d'un processus ou d'un système tout au long de son cycle de vie. Il permet de mieux comprendre l'évolution de son double réel et de prévoir son développement. Il a pour objectif d’aider à la gestion des ressources naturelles comme énoncé plus haut et à la prévision des catastrophes climatiques grâce à des outils numérique. L'ambition de ce programme est de mieux suivre et gérer les ressources naturelles régionales et de former un outil de prédiction servant au développement harmonieux et durable du territoire.
+Avec l’aide des données présentées par le programme, nous allons essayer de mieux comprendre le fonctionnement de la tourbière de la Guette et comment les différentes variables peuvent avoir un impact sur son écosystème.  
+
+
+\newpage
+
+\part{Analyse des données}
+\setcounter{chapter}{0}
+
+\chapter{Chargement et Exploration des données}
+Nous disposons d'un jeu de données qui répertorie différentes mesures bio-météorologiques qui ont été effectuées sur le site de la tourbière de la guette (située dans la région centre val de Loire ). Ce jeu de données est composé de 1807 lignes et 60 colonnes. Il répertorie 59 variables sur une période de Janvier 2017 à Décembre 2021 . Il provient du programme junon. Nous allons dans un premier temps explorer ces données avec RStudio.
+
+\section{Chargement des bibliothèques}
+
+Puisque nous utilisons RStudio, il faut que nous chargons quelques charger bibliothèques importantes à la réalisation de notre travail. En voici la liste et leur utilité.
+\begin{lstlisting}
+library(tseries) 
+library(dygraphs)
+library(VIM) 
+library(corrplot)
+library(missMDA)
+library(xts)
+library(ggplot2)
+library(ade4) \#pour l'acp
+library(forecast)
+\end{lstlisting}
+
+
+\section{Chargement des données et petits réglages}
+
+\begin{lstlisting}
+data1 = read.table("dataprojet1.txt",header = TRUE) 
+summary(data1) 
+dim(data1)
+date=as.Date(data1[,1])
+donnees = data.frame(date,data1[,-1])
+summary(donnees) 
+dim(donnees)
+\end{lstlisting}
+
+Nous chargeons d'abord les données à partir du fichier \texttt{dataprojet1}. Une rapide exploration avec summary nous permet de constater que nous avons 1807 lignes et 60 colonnes de mesures prises entre janvier 2017 et décembre 2021. \newline 
+Ensuite, la colonne \texttt{"date"}  est convertie au bon format. L'objet \texttt{"donnees"} contient l'ensemble des données nécessaires à notre analyse.\newline
+A présent, examinons certaines variables notamment $FCO_2$ et $FCH_4$ 
+
+\section{Visualisation des variables d'intérêt}
+Tous les graphiques interactifs ci-dessous sont présentés sous forme statique mais disponible dans notre fichier .RMD. L'exploration interactive est donc disponible dans le fichier .RMD.
+ \subsection{$FC0_2$}
+
+Le $FC0_2$ est une variable qui  représente le flux de dioxyde de carbone ($CO_2$) mesuré dans notre tourbière. D'après la documentation du programme Junon, un flux négatif signifie qu'il y a production de plus de matière organique et donc plus de carbone stocké. Tandis qu'un flux positif signifie qu' il y a  plus de gaz à effet de serre relâché dans l'atmosphère donc des températures plus hautes que la normale. \newline
+Interessons-nous à la courbe de son évolution dans le temps. Ci-après, le code utilisé; la fonction dygraph vient de la bibliothèque Dygraphs que nous avons chargée plus haut.
+
+\begin{lstlisting}
+attach(donnees)
+dataFCO2 = data.frame(date,FCO2) 
+dygraph(dataFCO2,main="Flux de  CO2 dans la tourbiere") %>% 
+  dySeries("FCO2", label = "FCO2", color = "blue") %>%
+  dyAxis("y", label = "Valeurs") %>%
+  dyOptions(strokeWidth = 1.5) %>%  
+  dyLegend(show = "always")%>% 
+  dyRangeSelector()  
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{fluxdeco2.png}
+	  \captionof{figure}{flux de $C0_2$ dans la tourbière}
+	  \label{fig:Flux de CO2}
+\end{center}
+
+Le graphique ~\ref{fig:Flux de CO2}  montre l'évolution du flux de $CO_2$ de janvier 2017 à décembre 2021. Nous constatons que le $CO_2$ varie fortement au cours de cette période. Cependant, ce graphique ne nous aide pas à faire une lecture claire de cette évolution. En effet, on constate la présence d'interruptions nettes, un vide à plusieurs endroits, notamment entre Décembre 2020 à Juillet 2021. Ces zones  vides correspondent à des valeurs manquantes (NA) dans les données.
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{fluxmanquantsco2.png}
+	  \captionof{figure}{les manquants sur une période}
+	  \label{fig:Manquants $CO_2$}	 
+\end{center}
+
+Ces valeurs manquantes compliquent nos analyses. Vérifions si nous rencontrons le même problème avec la variable $FCH_4$. 
+
+ \subsection{$FCH_4$}
+
+Le flux de méthane ($CH_4$) est une autre variable clé à analyser. De même, intéressons-nous à la courbe de son évolution dans le temps.  Le code utilisé est similaire à celui de la partie précédente.
+
+\begin{center}
+	 \includegraphics[width=0.8\textwidth]{fluxdech4.png}
+	  \captionof{figure}{Flux de $CH_4$ dans la tourbière}
+	  \label{fig:fluxch4}
+\end{center}
+
+Comme pour le $CO_2$, le graphique ~\ref{fig:fluxch4} présente des discontinuités. Pour l'illustrer, nous avons fait un zoom sur la période de Juin 2017 à Avril 2018; nous constatons une longue période avec très peu de mesures.
+\begin{center}
+	 \includegraphics[width=\textwidth]{fluxmanquantsch4.png}
+	  \captionof{figure}{Manquants sur une période}
+	  \label{fig:manquantch4}
+\end{center}
+
+Avec cette variable aussi, il y a des valeurs manquantes. Ces valeurs manquantes constituent un frein considérable à l'avancement de nos analyses notamment l'ACP. Nous devons donc utiliser une méthode pour remplacer les NA car nous ne pouvons pas juste les enlever.Pour ce faire, nous allons utiliser une méthode d'imputation des manquants.
+
+\section{Traitement des manquants}
+
+Nous avons constaté que dans notre jeu de données, il y a plusieurs valeurs manquantes(NA). En effet, sur les dygraphs précédents, il y a plusieurs espaces vides ainsi que des ruptures dans les courbes d'évolution de nos variables.  \\
+Pour avoir une idée précise de l'ampleur de ces NA, comptons d'abord le nombre total de NA. Pour ce faire, regardons de plus près avec le code suivant:
+
+\begin{lstlisting}
+natot = sum(is.na(donnees))
+cat("le nombre de valeurs manquantes au total est  :",natot, "\n")
+\end{lstlisting}
+
+Le nombre de valeurs manquantes au total est  : 14885. 
+Chacune de nos 59 variables comportent des NA. Ces NA sont répartis en différentes proportions pour chaque variable.
+
+\begin{lstlisting}
+na_prop <- sort(colMeans(is.na(donnees[,-1])))
+na_prop
+barplot(na_prop, las = 2, col = c(1:60), main = "Proportion de valeurs manquantes par variable", 
+        ylab = "Proportion")
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=0.8\textwidth]{repartission.png}
+	  \captionof{figure}{Repartition des NA par variable}
+	  \label{fig:repartition}
+\end{center}
+
+D'après ce graphique,  certaines variables présentent  plus de 50\% de manquants ( notamment $FCH_4$ et \texttt{lgt.pz\_wo\_WTD} ). La variable qui a le moins de NA est  lgt.pz\_cbdv\_aval\_WTD  et celle qui en a le plus est lgt.pz\_wo\_WTD  avec 52,08\% de manquants.\newline
+
+Nos variables principales, $FCO_2$ et  $FCH_4$, présentent elles aussi un taux élévé de données manquantes.   
+
+\begin{lstlisting}
+naFCH4<- round((sum(is.na(FCH4)) / nrow(donnees))*100,2) 
+naFCO2<- round((sum(is.na(FCO2)) / nrow(donnees))*100,2) 
+\end{lstlisting}
+
+\begin{itemize}
+	\item $FCO_2$: 34,37\% de valeurs manquantes
+	\item $FCH_4$: 50,3\% de valeurs manquantes
+\end{itemize}
+
+
+La quantité non négligeable des valeurs manquantes constitue une limitation majeure pour la suite. \newline
+Examinons de plus près la répartition des NA entre nos variables d'intérêt:
+
+\begin{lstlisting}
+aggr(donnees[, c("FCO2", "FCH4")],numbers=TRUE )
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=0.8\textwidth]{proportion.png}
+	 \captionof{figure}{Distribution des NA de $FCO_2$ et $FCH_4$}
+	 \label{fig:aggrco2ch4}
+\end{center}
+
+Sur ce graphique, chaque barre indique une configuration de présence ou d’absence des deux variables. Voici ce que l’on observe :
+
+\begin{itemize}
+	\item 45,3\% des observations ont à la fois $FCO_2$ et $FCH_4$ présents.
+	\item 30\% des observations présentent l'absence simultanée des deux.
+	\item 20,3\% des cas ont $FCH_4$ manquant alors que $FCO_2$ est présent
+	\item 4,4\% des cas  ont $FCO_2$ manquants et $FCH_4$ présent
+\end{itemize}
+
+Ceci renforce la nécessité de choisir une méthode d’imputation adaptée, capable de prendre en compte la structure des données.
+
+
+ \subsection{Imputation des manquants }
+
+Nous allons utiliser les outils du package missMDA pour gérer les manquants. Ces outils  permettent de remplacer les NA par des valeurs plausibles. L'idée ici, est de prédire ces valeurs à partir d'une analyse en composantes principales (ACP) qui prend en compte les similarités entre individus et entre variables.\newline
+Avant l'imputation proprement dite, nous devons choisir un nombre optimal de composantes à conserver pour l'ACP. Pour cela, nous utilisons la fonction \texttt{estim\_ncpPCA()}, qui évalue ce nombre en minimisant le critère d’erreur de prédiction des valeurs manquantes (SMEP).
+ 
+\begin{lstlisting}
+nb1 <- estim_ncpPCA(donnees[,-1], method = "Regularized")$ncp 
+
+dataimp <- imputePCA(donnees[,-1], ncp = nb1, method = "Regularized")$completeObs
+dataimp = data.frame(date,dataimp)
+summary(dataimp)
+\end{lstlisting}
+
+Nous avons utilisé la méthode dite "Regularized", qui introduit une pénalisation afin d’éviter le sur-ajustement, en particulier dans les jeux de données avec beaucoup de bruit ou de manquants, comme c’est le cas ici.
+
+\section{Les variables d'intérêt après imputation}
+
+Nous voulons maintenant vérifier visuellement si l’imputation semble cohérente. Autrement dit, les courbes des variables clés ($FCO_2$ et $FCH_4$) montrent-elles une continuité crédible, sans ruptures ou comportements bizarres liés à l’imputation ?
+
+
+ \subsection{$FCO_2$}
+
+\begin{lstlisting}
+s_FCO2 <- xts(dataimp[, "FCO2"],order.by = date)
+s_FCH4 <- xts(dataimp[, "FCH4"],order.by = date)
+dygraph(s_FCO2, main = "Imputation PCA - FCO2") 
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=0.9\textwidth]{imputationFCO2.png}
+	  \captionof{figure}{Évolution du flux de $CO_2$ après imputation}
+	  \label{fig:fco2_impute}
+\end{center}
+Le graphique ~\ref{fig:fco2_impute} montre une évolution harmonieuse, sans comportement bizarre à première vue. Les périodes où il y avait initialement des manquants semble être comblés et s'intègrent assez bien au reste de la courbe. 
+
+Pour mieux vérifier, nous avons utilisé la fonction \texttt{ggplot\_na\_imputations}, qui montre les valeurs initiales (en bleu) et les valeurs imputées (en rouge):
+
+\begin{lstlisting}
+ggplot_na_imputations(donnees[,-1]$FCO2, s_FCO2)
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{ggplotFCO2.png}
+	  \captionof{figure}{Comparatif}
+	  \label{fig:ggplotCO2}
+\end{center}
+Les points rouges restent cohérents avec l'allure de la courbe. Visuellement, nous ne remarquons aucun comportement bizarre. Cela suggère que l'imputation a été bien faite pour cette variable.
+De plus nous avons comparé les statistiques (Min,Max, moyenne et ecart type) de cette variable avant et après imputation. 
+
+\begin{lstlisting}
+summary(dataimp$FCO2)
+summary(donnees$FCO2)
+
+sd(dataimp$FCO2, na.rm = TRUE)
+sd(donnees$FCO2, na.rm = TRUE)
+\end{lstlisting}
+ Et nous avons obtenu des résultats plutot encourageant. En efffet:
+
+\begin{itemize}
+	\item le Min avant est pareil que celui après imputation , qui est de -14.695.
+	\item également le Max  reste inchangé  avant et imputation. il est de 11,3887.
+	\item il y a une "légère" différence entre la moyenne avant imputation (-1,1414) et celle d'après qui est de  -1,2126
+	\item les écart-types diffère aussi. Avant imputation, il était de  3,4831 alors qu'après , il est 3,2398
+\end{itemize}
+ 
+Globalement, les valeurs extrêmes (Min,Max) restent inchangées est encourangeant. Et même s'il y a une  différence entre la moyenne avant après et l'écart-type avant après, cette différence reste "légère". Ce qui suggère que l'imputation sur cette variable est acceptable.
+
+ \subsection{FCH4}
+
+\begin{lstlisting}
+
+dygraph(s_FCH4, main = "Imputation PCA - FCH4")
+\end{lstlisting}
+
+\begin{center} 
+	 \includegraphics[width=\textwidth]{imputationFCH4.png}
+	  \captionof{figure}{Évolution du flux de $CH_4$ après imputation}
+	  \label{fig:fch4_impute}
+\end{center}
+
+Nous constatons la même chose pour cette variable, le flux de $CH_4$. Le graphe montre une évolution continue sans comportement inattendu visuellement.
+
+\begin{lstlisting}
+ggplot_na_imputations(donnees[,-1]$FCH4, s_FCH4)
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{ggplotFCH4.png}
+	  \captionof{figure}{Comparatif CH4}
+	  \label{fig:ggplotCH4}
+\end{center}
+Avec la fonction \texttt{ggplot\_na\_imputations} , les points rouges qui représentent les valeurs imputées  semblent bien s'intégrées au graphe.
+De plus nous avons comparé les statistiques (Min,Max, moyenne et ecart type) de cette variable avant et après imputation.  Et nous avons pu remarqué que: 
+
+\begin{itemize}
+	\item le Min (-0,1244) reste inchangé.
+	\item le max  (0,0568) reste aussi le même .
+	\item la moyenne avant imputation est -0,018. elle est assez différente de celle d'après qui est  -0,0201
+	\item l'écartt type d'après a légèrement diminue passant de  0,0238 (avant imputation)  à  0,0235 après 
+\end{itemize}
+ 
+Les valeurs extrêmes, min et max n'ayant pas changé et comme les écarts-types sont du même ordre, ça semble etre bon signe pour notre imputation. Cependant, étant donné que la variable $FCH_4$ présentait plus de 50\% de NA, il est important de faire attention à nos interprétations en ce qui la concerne.
+
+\newpage
+\chapter{Analyse en Composantes Principales(ACP)}
+
+\section{En quoi cela consiste-t-il ?}
+
+L'analyse en composantes principales (ACP) consiste à résumer un tableau de données quantitatives de $n$ lignes (aussi appelés individus) et $p$ colonnes (aussi appelés caractères ou variables), avec $p>2$. \\
+L'objectif ici est de réaliser une synthèse et une simplification de l'information disponible, et en "perdant" le moins possible de l'information présente dans les données de départ.  Pour cela, on va réduire la dimension du jeu de données tout en concervant le plus possible l'information de départ. L'ACP recherche de nouvelles variables, appelées composantes principales, qui sont des combinaisons linéaires des variables d'origine et qui capte la plus grande part possible de la variabilité totale.
+Cette technique permet notamment :
+
+\begin{itemize}
+    \item de visualiser les données dans un espace de faible dimension (souvent 2 ou 3 axes);
+    \item de repérer des structures dans les données: regroupements, oppositions et corrélations;
+    \item de simplifier le jeu de données pour une interprétation plus efficace.
+
+\end{itemize}
+
+\section{ACP sur les données}
+
+Notre jeu de données contient un ensemble de mesures réalisées sur la tourbière. Ces mesures sont exprimées dans diverses unités de mesure. L'évapotranspiration (ETR) par exemple est exprimée en mm/h, le flux de $CO_2$ ($FCO_2$) quant à lui est mesuré en $mu$molCO\textsubscript{2}/m\textsuperscript{2}/s, la vitesse du vent en m/s etc.
+Vu qu'il y a plusieurs unités de mesure, nous avons pensé à faire une ACP normée. Mais, pour en avoir le c\oe ur net, nous avons vérifié les écarts-types des variables dans le but de voir s'ils ont le même ordre de grandeur. 
+
+\subsection{ Ecarts-types }
+
+\begin{lstlisting}
+print(apply(dataimp[,-1],2,sd),3)
+sdmen <- apply(dataimp[,-1],2,sd)
+max(sdmen)/min(sdmen) )
+\end{lstlisting}
+Le rapport entre l'écart-type maximum et l'écart-type minimum est de l'ordre de 6935. Ce chiffre montre un déséquilibre fort entre les variables: certaines varient énormément , d'autres très peu. Si nous les utilisions telles quelles, les variables  qui ont un petit écart-type seraient négligées dans la construction des composantes principales. Il est donc nécessaire de réaliser une  ACP normée. Cela permettra de donner le même poids à chaque variable, indépendamment de son échelle.
+
+\subsection{L'ACP}
+
+Nous utilisons les outils du package ADE4 dans cette partie. Comme nous voulons comprendre comment les gaz à effet de serre se comportent dans notre tourbière, nous allons les mettre en variables supplémentaires. Cela nous permettra dabord de  voir comment les autres variables se comportent : est-ce-qu'il y a des regroupements? des oppositions? ou  est-ce-que certaines sont liées? \newline
+Ensuite, nous pourrons voir comment les GES se projettent dans l'ensemble. 
+
+\begin{lstlisting}
+acpj <- dudi.pca(dataimp[,-c(1,3,4)], scale = TRUE, scannf = F, nf =7) 
+class(acpj)
+names(acpj)
+head(acpj$li) 
+\end{lstlisting}
+
+\subsubsection{Inertie }
+
+L'inertie permet de mesurer la proportion d'information expliquée par chaque axe principal. Nous voulons gardé les axes qui résument au mieux  les données ( généralement ce sont les premières). 
+\begin{lstlisting}
+inertie <- inertia.dudi(acpj, col.inertia = F, row.inertia = T)
+names (inertie)
+inertie$tot.inertia
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=0.8\textwidth]{inertie.png}
+	 \captionof{figure}{Pourcentage d’inertie expliqué par chaque axe}
+	 \label{fig:inertie}
+\end{center}
+
+Le document ~\ref{fig:inertie} montre le pourcentage d'inertie expliquée par chaque axe et les inerties cumulées correspondantes. En nous arrêtant aux 3 premiers axes, nous avons déjà plus de 70\% (78,28\% plus précisément) de l'inertie totale. Cela signifie qu'une grande partie de l'information du jeu de données est concentrée dans ces 3 axes là. Nous pourrons donc nous concentrer principalement sur eux pour la suite de notre analyse. 
+
+\subsubsection{ Eboulis des valeurs propres}
+Pour conforter notre choix,  nous utilisons la règle du coude sur l'éboulis des valeurs propres. 
+\begin{lstlisting}
+barplot(acpj$eig,names.arg=1:length(dataimp[,-c(1,3,4)])) 
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=0.8\textwidth]{ebouli.png}
+	 \captionof{figure}{Eboulis des valeurs propres}
+	 \label{fig:Ebouli}
+\end{center}
+En utilisant la règle du coude, nous sommes tentés de garder 3 à 4 axes principaux. On voit que avec les 3 premier axes, on capte plus de 78\% d'inertie et avec 4 axes, nous arrivons à expliquer 84,90\%.  Pour la suite, commençons d'abord avec 3 axes.
+
+\subsection{Corrélations entre les variables}
+
+Avant de continuer avec l'ACP, nous avons visualisé la matrice de corrélation des variables. Notre objectif est de voir si certaines variables sont fortement liées ou si au contraire elles sont peu corrélées.
+
+\begin{lstlisting}
+mcorr<-as.matrix(cor(dataimp[,-1], use = "complete.obs")) 
+corrplot(mcorr,type="upper",tl.cex=0.6, order="hclust",tl.col="black",tl.srt=100 ) 
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=0.8\textwidth]{corrplotdonnees.png}
+	 \captionof{figure}{Matrice de corrélation des variables }
+	 \label{fig:corrplot}
+\end{center}
+
+Sur cette figure, on distingue quelques informations:
+ \begin{itemize}
+    \item Les variables $FCO_2$ et $FCH_4$ présentent une corrélation négative avec certaines variables énergétiques comme l' ETR(l'évapotranspiration), LHEAT(chaleur latente), HEAT(la chaleur sensible ). Cela pourrait signifier que le flux de GES est influencés par la chaleur sur le site. Sur la figure, elles sont représentées par la couleur rouge
+    \item Les variables mesurant la température du sol à différents endroits et à différentes profondeurs sur le site  forment un bloc homogène et semblent fortement corrélées entre elles (notamment lgt.bm2\_TS\_2\_1\_1, lgt.bm2\_TS\_2\_1\_2 , lgt.bm2\_TS\_2\_2\_1 , lgt.bm2\_TS\_2\_2\_2 , lgt.bm1\_TS\_1\_1\_1, lgt.bm1\_TS\_1\_1\_2? lgt.bm1\_TS\_1\_2\_2 ...  ). Elles sont représentées en bleu foncé.
+    \item Le bloc bleu assez clair regroupe les variables qui mesurent le Water Table Depth(WTD), l'eau du sol (SWC)
+\end{itemize}
+
+\subsection{Les cercles de corrélation}
+
+Nous représentons les cercles de corrélation des variables obtenus à partir de l'ACP. Ces cercles permettent de voir la représentation des variables par les composantes principales. Elles aident surtout à comprendre comment les variables se regroupent ou s'opposent.
+
+\subsubsection{Axes 1 et 2 }
+
+\begin{lstlisting}
+s.corcircle(acpj$co,xax=1,yax=2,clabel=0.5, sub ="cercle de correlation")
+title ( "ACP normee: 1-2")
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=0.8\textwidth]{ACPnormee12.png}
+	 \captionof{figure}{Cercle de corrélation avec les axes 1 et 2 }
+	 \label{fig:ACPnormee12}
+\end{center}
+
+Sur la figure ~\ref{fig:ACPnormee12} , nous distinguons 2  grands groupes de variables bien représentées et un ensemble d'autres mal représentées (proches du centre du cercle donc peu corrélées avec les axes 1 et 2). Parmi les variables bien représentées, nous remarquons que:
+ \paragraph{Le long de l'axe 1 (l'axe horizontal):} on retrouve les variables liées à la chaleur comme: 
+\begin{itemize}
+    \item le rayonnement (SW)
+    \item la température du sol (TS)
+    \item tla empérature de l'eau (TW)
+    \item l'évapotranspiration (ETR). 
+\end{itemize}
+Cela suggère que \textbf{l'axe 1} capte assez \textbf{les phénomènes thermiques} dans la tourbière. \newline
+ \paragraph{Le long de l'axe 2 (axe vertical):} on retrouve les variables comme: 
+
+\begin{itemize}
+    \item la profondeur de la nappe phréatique (WTD) 
+    \item la teneur en eau du sol (SWC)
+\end{itemize}
+
+Dans ce plan, les variables proche du centre ne sont pas bien décrites. Elles  sont peut être mieux représentées dans d'autres plans. Regardons le cercle suivant.
+
+\subsubsection{Axes 1 et 3 }
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{ACPnormee13.png}
+	 \captionof{figure}{Cercle de corrélation avec les axes 1 et 3 }
+	 \label{fig:ACPnormee13}
+\end{center}
+
+Sur la figure ~\ref{fig:ACPnormee13}, nous observons 4 grands groupes  bien représentés et bien séparés. Deux groupes sur l'axe 1 et deux sur l'axe 3.
+
+ \paragraph{Le long de l'axe 1:}
+   
+\begin{itemize}
+    \item A droite, on retrouve des variables liées à \textbf{la teneur du sol en eau} (SWC) et à \textbf {la profondeur de la nappe phréatique} (WTD) ;
+    \item A gauche, on trouve des variables qui sont liées à la \textbf{température du sol} (TS).
+\end{itemize}
+
+ Avec ça, nous pouvons dire que d'un coté l'axe 1 capte les phénomènes liés à la dynamique de l'eau (hydrologique) et de l'autre, il capte les phénomènes thermiques. \newline
+Comme les deux cotés sont opposés, cela suggère que les phénomènes thermiques et hydriques sont \textbf{antagonistes} : quand l’un augmente, l’autre diminue. Quand le sol se réchauffe, il perd de l’humidité.
+
+
+ \paragraph{Le long de l'axe 3:}
+Nous distinguons :
+
+\begin{itemize}
+    \item En bas, on trouve  : \textbf{la teneur en eau du sol} (SWC), \textbf{l'évapotranspiration} (ETR.), le \textbf{Rayonnement Photosynthéthique} (PPFD) , \textbf{la chaleur latente}(Lheat) et la \textbf{chaleur sensible}(Heat). Ce sont des variables associées à l’activité biologique ou thermique.
+    \item En haut, il y a les variables atmosphériques: \textbf{Wind speed} (WS), \textbf{Relative humidity } (RH) et  \textbf{Wind direction} (WD) . Ces variables sont liées au \textbf{vent et à l’humidité de l’air} 
+\end{itemize}
+
+L'axe 3 oppose les phénomènes atmosphériques (vent et humidité) aux  phénomènes thermo-biologiques(activité des plantes, evapotranspiration). 
+
+\subsubsection{Axes 2 et 3 }
+
+\begin{lstlisting}
+s.corcircle(acpj$co,xax=2,yax=3,clabel = 0.5, sub ="cercle de correlation")
+title ( "ACP normee: 2-3")
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{ACPnormee23.png}
+	 \captionof{figure}{Cercle de corrélation avec les axes 2 et 3 }
+	 \label{fig:ACPnormee23}
+\end{center}
+
+Sur ce dernier cercle, on retrouve 3 groupes de variables.
+ 
+Sur l'axe 2, on observe un groupe de variables dont la majorité n'est pas proche du cercle. Cependant, celles proche du cercle sont liées à la \textbf{teneur en eau du sol} (SWC) et  à  la \textbf{profondeur de la nappe phréatique} (WTD). \newline
+En ce qui concerne l'axe 3, on peut observer 2 groupes qui s'opposent. En effet, il y a:
+
+\begin{itemize}
+    \item En bas, un premier groupe de variable qui sont : la \textbf{ teneur en eau du sol} (SWC), \textbf{l'évapotranspiration} (ETR.), la \textbf{Rayonnement Photosynthéthique} (PPFD) , \textbf{la chaleur latente}(Lheat), la \textbf{ pression de l'air} (PA) et la \textbf{chaleur sensible}(Heat). Il s'agit de variables liées à l'énergie solaire et la transpiration des plantes  ;
+    \item En haut, il y a le second groupe de variables. Il contient  le \textbf{flux thermique du sol} (G), le \textbf{ Rayonnement } (LW\_IN) et la  \textbf{direction du vent } (WD) . Ces variables sont liées au \textbf{vent},  à l’atmosphère  et au \textbf{radiation} et au sol. 
+\end{itemize}
+
+Ce plan confirme encore l’opposition entre l’\textbf{activité thermique-biologique} et la \textbf{dynamique atmosphérique}. \newline
+
+En somme, cette analyse montre que les trois premiers axes résument bien l’essentiel des dynamiques observées dans la tourbière : opposition entre chaleur et humidité, entre activité biologique et conditions atmosphériques. Ces oppositions nous aideront à mieux comprendre l’évolution des gaz à effet de serre, que nous allons maintenant projeter dans ces plans.
+
+\subsection{Les cercles de corrélation avec les variables supplémentaires}
+
+Nous avons dans un premier temps fait une ACP sans inclure les variables que nous cherchons à comprendre:  $FCO_2$ et $FCH_4$. 
+En effet, nous voulions comprendre la structure du jeu de donnée sans influencer l'analyse avec nos 2 variables principales. Ensuite, nous projetons $FCO_2$ et $FCH_4$ en tant que \textbf{variables supplémentaires} dans les différents cercles de corrélations. Cela permet d'identifier à  quelles variables  elles sont liées ou opposées.
+Dans un premier temps, nous avons centré et réduit $FCO_2$ et $FCH_4$. Puis, nous avons calculé leur corrélation avec les différents axes. A partir de là, nous les avons représentés dans les cercles.
+
+\begin{lstlisting}
+var_sup <- scale(dataimp[,c(3,4)])  
+cor_sup <- cor(var_sup,acpj$li )
+head(cor_sup)
+\end{lstlisting}
+
+\subsubsection{Axes 1 et 2 }
+
+\begin{lstlisting}
+s.corcircle(acpj$co,xax=1,yax=2,clabel=0.6 , sub ="Cercle 1" ) 
+
+arrows(0, 0, cor_sup[1,1], cor_sup[1,2], col = "red", length = 0.1)  
+text(cor_sup[1,1], cor_sup[1,2], labels = "FCO2", pos = 3, col = "red")
+
+arrows(0, 0, cor_sup[2,1], cor_sup[2,2], col = "blue", length = 0.1)
+text(cor_sup[2,1], cor_sup[2,2], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 1 et 2")
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{Cercle1sup.png}
+	 \captionof{figure}{Projection de $FCO_2$ et $FCH_4$ sur les axes 1 et 2}
+	 \label{fig:Cercle1sup}
+
+\end{center}
+
+Sur la figure ~\ref{fig:Cercle1sup}, on peut voir que $FCO_2$ et $FCH_4$ suivent l'axe 1 vers la droite mais, comme leurs flèches n'est pas proche du cercle, tout interprétation est à prendre  avec prudence. En regardant les corrélations, on voit que  $FCO_2$ est mieux représenté. La flèche de $FCO_2$ à droite fait opposition aux variables thermiques situées à gauche de l'axe 1.  Nous pouvons donc  dire que  $FCO_2$  est en opposition avec les phénomènes thermiques notamment la \textbf{température de l'eau} (TW) et  \textbf{la température du sol} (TS). Cela suggère que plus les températures sont élevées, plus le flux de $CO_2$ diminue.
+
+
+\subsubsection{Axes 1 et 3 }
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{cercle2sup.png}
+	 \captionof{figure}{Projection de $FCO_2$ et $FCH_4$ sur les axes 1 et 3}
+	 \label{fig:Cercle2sup}
+\end{center}
+
+Dans ce plan, $FCO_2$ et $FCH_4$ sont mieux représentés. Ces variables semblent être captées par l'axe 3. Cela suggère que les phénomènes atmosphériques ( humidité, vent) sont fortement liées à $FCO_2$ et $FCH_4$. 
+Les deux gaz semblent opposés à des variables comme \textbf{ETR}, \textbf{PPFD}, \textbf{Heat} et \textbf{Lheat}, c’est-à-dire des indicateurs d’activité thermique et biologique. Mais, ils sont orientés dans la même direction que le \textbf{vent} (WS, WD) ou \textbf{l’humidité} (RH), ce qui suggère que les conditions atmosphériques (vent et humidité) influencent davantage ces flux que les variables de type chaleur ou rayonnement.
+
+\subsubsection{Axes 2 et 3 }
+
+\begin{lstlisting}
+s.corcircle(acpj$co,xax=2,yax=3,clabel=0.6, sub ="Cercle 3") 
+
+arrows(0, 0, cor_sup[1,2], cor_sup[1,3], col = "red", length = 0.1)
+text(cor_sup[1,1], cor_sup[1,2], labels = "FCO2", pos = 3, col = "red")
+
+arrows(0, 0, cor_sup[2,2], cor_sup[2,3], col = "blue", length = 0.1)
+text(cor_sup[2,2], cor_sup[2,3], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 2 et 3")
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{Cercle3sup.png}
+	 \captionof{figure}{Projection de $FCO_2$ et $FCH_4$ sur les axes 2 et 3}
+	 \label{fig:Cercle3sup}
+\end{center}
+
+Dans ce dernier plan, les deux flèches confirment leur bonne représentation sur l’axe 3. $FCH_4$ y est même mieux aligné que $FCO_2$. Elles pointent dans une direction opposée à celle des variables énergétiques (PPFD, ETR, Lheat, Heat). Cela renforce l’idée d’une \textbf{relation négative entre les flux de GES et les variables thermiques}.
+
+En revanche, elles sont orientées du même côté que les variables liées au vent et à l’humidité, ce qui suggère que les conditions atmosphériques pourraient favoriser l’émission de GES dans la tourbière. \newline 
+
+
+\subsection{Quelques remarques et commentaires}
+
+
+Le grand nombre de variables rend les cercles de corrélation difficilement lisibles même avec une taille de police réduite. Pour faciliter l’interprétation, nous avons donc étudié les corrélations entre les axes principaux et chaque variable. \newline
+Dans un premier temps, nous avons calculé la corrélation entre les axes factorielles et les variables: 
+
+\begin{lstlisting}
+cc<-cor(dataimp[,-c(1,3,4)],acpj$li) 
+head(cc)
+\end{lstlisting}
+
+Ensuite, nous avons identifié les variables corrélées (positivement/ négativement) aux différents axes. Enfin, nous avons emis nos hypothèses et nos interprétations en nous basant sur les résultats obtenus. 
+Nous considérons qu’une variable est significativement corrélée à un axe si le coefficient de corrélation est supérieur ou égal à 0.5 en valeur absolue. Pour chaque axe, nous distinguons les corrélations positives et négatives afin d'interpréter le sens des composantes.
+
+\subsubsection{Axe 1}
+
+Voici la suite de la démarche pour l'axe 1. Il s'agit de la même méthode pour les deux autres. \newline 
+-  D'abord on a regardé les variables dont la valeur absolue de la corréllation avec l'axe 1 est supérieur à une certaine valeur seuil. Nous l'avions d'abord prise assez proche de 1 mais, nous n'avons pas obtenu assez de variables.
+
+\begin{lstlisting}
+seuil=0.5
+cor1<-cc[abs(cc[,1])>=seuil,,drop=F]
+nrow(cor1)
+rownames(cor1)
+\end{lstlisting}
+
+Avec cela, on  voit qu'il y a 43 variables qui sont corrélées à l'axe 1.  Pour la plupart, il s'agit des variables de la température du sol (TS), celles de la température de l'eau (TW),  celles de la profondeur de la nappe fréatique (WTD), celle de la teneur du sol en eau (SWC) et l'evapotranspiration (ETR). La liste complète se trouve dans l'Annexe 2. \newline
+Ensuite, nous avons regardés quelles variables étaient négativement corrélées. 
+
+\begin{lstlisting}
+cor1N<-cc[cc[,1]<=(-seuil),,drop=F]
+nrow(cor1N)
+rownames(cor1N)
+\end{lstlisting}
+Elles sont au nombre de 30. Essentiellement, nous avons les variables de la température du sol (TS), celle de la chaleur latente (LHEAT) et celle de l'evapotranspiration (ETR). La liste complète se trouve également dans l'annexe 2.
+
+Enfin, nous avons regardés les variables qui sont positivement corrélées à notre axe.  
+\begin{lstlisting}
+cor1p<-cc[cc[,1]>=(seuil),,drop=F]
+nrow(cor1p)
+rownames(cor1p)
+\end{lstlisting}
+
+Elles sont au nombre de 13. Il s'agit essentiellement des variables de la teneur du sol en eau (SWC) et des variables liées à la nappe phréatique (WTD). \newline
+
+En somme, l’axe 1 oppose clairement les variables liées à la température/énergie (corrélation négative) aux variables liées à l’humidité/nappe phréatique (corrélation positive).
+
+\subsubsection{Axe 2}
+
+Les variables ayant une corrélation négative sont au nombre de 14. Ce sont les variables qui mesurent la teneur en eau (SWC) et celles liées à la nappe phréatique (WTD). \newline
+Il n' y a aucune variable corrélées positivement à l'axe 2. \newline
+En somme, l'axe 2 apparait comme celle qui capte le mieux et uniquement les phénomènes liés à l'hydrologie.
+
+\subsubsection{Axe 3}
+
+Les variables qui ont une corrélation négative avec cet axe sont au nombre de 4. Elles sont  liées à la chaleur ( HEAT) et aux rayonnements à ondes courtes (SW). Ces variables captent l'énergie solaire et la chaleur sensible.
+\begin{lstlisting}
+[1] "Heat"                 
+[2] "lgt.bm1_PPFD_IN_1_1_1"
+[3] "lgt.bm2_SW_IN_1_1_1"  
+[4] "lgt.bm2_SW_OUT_1_1_1" 
+\end{lstlisting}
+
+Les variables qui ont une corrélation positive avec cet axe sont au nombre de 8. Il s'agit du rayonnement à ondes longues (LW), de la direction  et la vitesse du vent (WD, WS) et du flux de chaleur au sol (G).
+
+\begin{lstlisting}
+[1] "SoilHeatd2"         
+[2] "lgt.bm1_G_1_1_2"    
+[3] "lgt.bm1_P_1_1_1"    
+[4] "lgt.bm1_WD_1_1_1"   
+[5] "lgt.bm1_WS_1_1_1"   
+[6] "lgt.bm2_G_2_1_1"    
+[7] "lgt.bm2_G_2_1_2"    
+[8] "lgt.bm2_LW_IN_1_1_1"
+\end{lstlisting}
+
+Les variables négativement corrélées à l’axe 3 (HEAT, SW) décrivent l’énergie solaire et la chaleur sensible. Les positives (LW, WD, WS, G) décrivent le vent, la direction, le rayonnement à ondes longues et le flux au sol. L’axe 3 oppose donc les phénomènes atmosphériques (vent, radiation longue ondes) aux phénomènes thermiques (chaleur sensible, rayonnement court). 
+
+\subsubsection{Corrélation de nos variables d'intérêt avec les axes}
+Pour être plus précis, nous avons regardé la corrélation entre nos GES et les composantes principales.
+
+\begin{lstlisting}
+var_sup <- scale(dataimp[,c(3,4)])  
+cor_sup <- cor(var_sup,acpj$li )
+cor_sup[,1:3]
+\end{lstlisting}
+
+\begin{lstlisting}
+         Axis1     Axis2     Axis3
+FCO2 0.5620687 0.1400541 0.5213142
+FCH4 0.4325035 0.1676419 0.6179814
+\end{lstlisting}
+
+\subsubsection{Commentaires}
+
+En résumé, nous observons que $FCO_2$ présente une corrélation de 0.56 avec l’axe 1 et de 0.52 avec l’axe 3. Pour $FCH_4$, la corrélation est plus marquée avec l’axe 3 (0.62) qu’avec l’axe 1 (0.43). Les deux variables sont très peu présent en ce qui concerne l'axe 2.
+L’axe 1, que nous avons interprété comme opposant les variables thermiques (température du sol, évapotranspiration) aux variables hydriques (teneur en eau du sol, profondeur de la nappe), semble fortement associé au flux de $CO_2$. Cette corrélation positive suggère que les variations thermiques de la tourbière ont un impact sur le flux de $CO_2$. Le flux est surement réduit  lorsque la température augmente. \newline
+L’axe 3, représentant l’opposition entre phénomènes atmosphériques (vent, rayonnement à ondes longues) et chaleur sensible ou rayonnement solaire, est corrélé à la fois à $FCO_2$ et $FCH_4$. Cette association, plus marquée pour $FCH_4$, indique que les conditions atmosphériques, telles que la circulation du vent et l’humidité de l’air, pourraient influencer la dynamique d’émission de ces gaz à effet de serre. \newline
+Ces résultats confirment l’importance de considérer à la fois les phénomènes thermiques et les conditions atmosphériques pour expliquer les variations des flux de $CO_2$ et $CH_4$ dans la tourbière.
+
+\subsection{Représentation du plan factoriel}
+
+Analysons à présent la répartition des mois sur les plans factoriels:
+
+\subsubsection{Représentation du plan factoriel barycentré sur les mois Axe 1-3}
+
+\begin{lstlisting}
+mois <-format(date, format = "%m")
+mois1 <- factor(mois, 
+               levels = sprintf("%02d", 1:12),
+               labels = c("Janvier", "Fevrier", "Mars", "Avril", "Mai", "Juin",
+                          "Juillet", "Aout", "Septembre", "Octobre", "Novembre", "Decembre"),
+               ordered = TRUE)
+
+s.class(acpj$li[,c(1,3)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels", 
+        csub = 0.3)
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=0.7\textwidth]{Axe13bary.png}
+	 \captionof{figure}{Plan factoriel sur les axes 1 et 3 avec les mois}
+	 \label{fig:Axe13bary}
+\end{center}
+
+Sur ce plan, on voit une séparation entre les mois d'hiver et les mois d'été. Les mois d'hiver (Décembre, Janvier et Février) sont à droite le long de l'axe 1 tandis que les mois d'été sont à gauche. Ce qui confirme ce que nous avons dit plus haut. En effet, l'axe 1 capte principalement les changements de température. \newline
+On remarque également que certains mois sont  superposés avec d'autres. Par exemple Juillet qui est masqué par Ao\^ut; cela traduit peut-être des conditions thermiques similaires. De même pour Juin qui n'est pas du tout visible; il semble être englouti par Septembre. \newline
+
+De plus, nous remarquons les mois comme Octobre et Mai qui se situent au centre. Ceci est surement dû au fait que ces mois ont des conditions qui sont à cheval entre le froid de l'hiver et le chaud de l'été. Nous pouvons les qualifier de mois de "transition". \newline
+
+En ce qui concerne l'axe vertical (l'axe 3), qui reflète les dynamiques atmosphériques comme le vent et  l'humidité, on remarque qu'il ne sépare pas clairement les mois. On voit que les mois tels que Décembre, Janvier et même Février ont leurs ellipses plus allongées suivant la vertical. Cela suggère que les conditions atmosphériques sont plus marqué pendant ces périodes. Peut-être des vents assez fort ou une humidité marquée. Il en va de même pour les mois tels que Octobre et Novembre.
+
+\subsubsection{Représentation du plan factoriel barycentré sur les mois Axe 1-2}
+
+\begin{center}
+	 \includegraphics[width=0.7\textwidth]{Axe12bary.png}
+	 \captionof{figure}{Plan factoriel sur les axes 1 et 2 avec les mois}
+	 \label{fig:Axe12bary}
+\end{center}
+
+La figure ~\ref{fig:Axe12bary} montre une meilleure répartition des mois. Comme à la section précédente, nous voyons du coté droit les mois d'hiver et les mois d'été du coté gauche. De plus, on distingue mieux les mois qu'on peut qualifier de globalement froid (Novembre, Décembre,Janvier,Février,Mars) des mois globalement chauds (Juin,Juillet,Ao\^ut, Septembre). On observe aussi les mois tels que Avril, Octobre et Mai qui sont beaucoup plus au centre ce qui suggère des conditions modérées.  Cela confirme que l'axe 1 capte les dynamiques thermiques.
+
+D'un autre coté, on remarque que les ellipses autour de septembre, Ao\^ut et Juillet sont étirées verticalement. Cette orientation pourrait refléter les facteurs captés par l'axe 2. Il s'agit de conditions liées à l'hydrologie ou à des caractéristiques de la nappe phréatique pendant ces périodes.
+
+\subsubsection{Représentation du plan factoriel barycentré sur les mois Axe 2-3}
+
+\begin{lstlisting}
+s.class(acpj$li[,c(2,3)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels", 
+        csub = 0.5)
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=0.7\textwidth]{Axe23bary.png}
+	 \captionof{figure}{Plan factoriel sur les axes 2 et 3 avec les mois}
+	 \label{fig:Axe23bary}
+\end{center}
+
+Ce plan factoriel est défini par les axes 2 et 3.  Ces axes, qui reflètent notamment des phénomènes hydrologiques et atmosphériques, ne permettent pas ici de distinguer clairement les saisons ou les périodes de l'année. En effet, on remarque que la majorité des mois sont superposés au centre du plan. Les mois de Décembre et de Novembre sont les plus visibles et ils recouvrent plusieurs labels. On note aussi que plusieurs ellipses sont étirées dans la direction de l'axe 2, ce qui suggère une influence des variables corrélées à l'axe 2. En somme, la figure ~\ref{fig:Axe23bary} n'offre pas de séparation nette des saisons comme observée  sur les autres plans et elle ne permet pas d'avoir une interprétation claire.
+
+
+\subsubsection{Représentation du plan factoriel barycentré sur les années Axe 1-3}
+
+Analysons à présent la répartition des années sur les plans factoriels:
+
+\begin{lstlisting}
+annee <-format(date, format = "%Y")
+annee1 <- factor(annee, 
+               levels = c("2017", "2018", "2019", "2020", "2021"),
+               ordered = TRUE)
+
+s.class(acpj$li[,c(1,3)], fac = annee1, col = rainbow(length(unique(annee1))), 
+        sub = "Plan factoriel - Barycentres annuels", 
+        csub = 0.3)
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{baryannuel13.png}
+	 \captionof{figure}{Plan factoriel sur les axes 1 et 3 avec les années}
+	 \label{fig:baryannuel13}
+\end{center}
+
+
+\subsubsection{Représentation du plan factoriel barycentré sur les années Axe 1-2}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{baryannuel12.png}
+	 \captionof{figure}{Plan factoriel sur les axes 1 et 2 avec les années}
+	 \label{fig:baryannuel12}
+\end{center}
+
+\subsubsection{Représentation du plan factoriel barycentré sur les années Axe 2-3}
+
+\begin{lstlisting}
+s.class(acpj$li[,c(2,3)], fac = annee1, col = rainbow(length(unique(annee1))), 
+        sub = "Plan factoriel - Barycentres annuels", 
+        csub = 0.3)
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{baryannuel23.png}
+	 \captionof{figure}{Plan factoriel sur les axes 2 et 3 avec les années}
+	 \label{fig:baryannuel23}
+\end{center}
+
+\subsubsection{Commentaire}
+
+Ici, nous représentons les résultats de notre ACP regroupés par année.  
+La figure  ~\ref{fig:baryannuel23}  et ~\ref{fig:baryannuel12} montre que l'année 2019 se distingue des autres. En effet, sur ~\ref{fig:baryannuel12}, 2019 est beaucoup plus détaché de l'ensemble formé par les autres années. Et, son ellipse s'étire beaucoup plus sur l'axe 2, vers le haut. Cela suggère que les facteurs que captent l'axe 2 sont très marquées dans cette année. Comme cet axe a trait à l'hydrologie, la particularité de l'année 2019 pourrait traduire des conditions hydrologiques anormales ou extrêmes. Après vérification des archives, il apparait qu'une importante sécheresse a effectivement marquée cette année-là, ce qui confirme notre hypothèse.
+D'un autre côté, sur la figure ~\ref{fig:baryannuel13} contrairement aux 2 autres, on remarque que toutes les années se superposent.  Elles se regroupent au centre et les plus visibles sont 2020 et 2021. Néanmoins, nous remarquons que les ellipses de chaque année s'étirent sur l'axe 1 (l'horizontal). Cela suggère que les dynamiques thermiques influencent ces périodes. Mais, comme il n'y a pas de démarquation claire, il est difficile de conclure. 
+Ces résultats soulignent ainsi l'intérêt de l'axe 2 pour détecter des variations hydrologiques annuelles marquées (comme en 2019), mais montrent aussi les limites d'une interprétation thermique concernant les années sur l'axe 1-3, où il n'y a pas de séparation claire.
+
+\subsection{Regard sous un autre angle}
+
+Nous avons inclus la composante 4 dans nos analyses pour voir si elle nous apporte des informations supplémentaires. Cet ajout est justifié car avec les 4 axes, nous arrivons à capter plus de 80\% de l'inertie totale ce qui est énorme. De plus, la règle du coude sur l'éboulis de valeurs propres suggère, un coude autour de l'axe 4.
+
+
+\subsubsection{Les Cercles de corrélation }
+Regardons les différents cercles de corrélation impliquant l'axe 4:
+
+\begin{lstlisting}
+s.corcircle(acpj$co,xax=1,yax=4,clabel = 0.5)
+title ( "ACP normEe: 1-4")
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{ACPnormee14.png}
+	 \captionof{figure}{Cercle de corrélation avec les axes 1-4}
+	 \label{fig:ACPnormee14}
+\end{center}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{ACPnormee24.png}
+	 \captionof{figure}{Cercle de corrélation avec les axes 2-4}
+	 \label{fig:ACPnormee24}
+\end{center}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{ACPnormee34.png}
+	 \captionof{figure}{Cercle de corrélation avec les axes 3-4}
+	 \label{fig:ACPnormee34}
+\end{center}
+
+\subsubsection{Commentaire }
+
+Sur chacun des ces 3 cercles, nous distinguons peu de variables fortement corrélées à l'axe 4 et bien représentées. En regardant les corrélations, on se rend compte que seules 5 variables présentent une corrélation en valeur absolue supérieure à 0.5.
+
+\begin{itemize}
+    \item  \textbf{Relative humidity} (RH), corrélée négativement à l'axe,
+    \item et des variables de \textbf{Soil heat flux} (G), corrélées positivement.
+\end{itemize}
+
+Il apparait que cet axe oppose donc la chaleur du sol à l'humidité de l'air. Cela pourrait refléter des phénomènes plus subtils liés aux échanges de chaleur dans la tourbière.
+Cependant, le faible nombre de variables bien représentées  indique que l'axe 4 apporte moins de structure interprétable que les axes précédents. Son ajout reste utile pour compléter l'inertie expliquée, mais son intérêt est limité et doit être interprété avec prudence. 
+
+\subsubsection{Les Cercles de corrélation avec variables supplémentaires }
+
+\begin{lstlisting}
+s.corcircle(acpj$co,xax=1,yax=2,clabel=0.6 , sub ="Cercle 1-4" )  
+
+arrows(0, 0, cor_sup[1,1], cor_sup[1,4], col = "red", length = 0.1)   
+text(cor_sup[1,1], cor_sup[1,4], labels = "FCO2", pos = 3, col = "red") 
+
+arrows(0, 0, cor_sup[2,1], cor_sup[2,4], col = "blue", length = 0.1)
+text(cor_sup[2,1], cor_sup[2,4], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 1 et 4")
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{Cercle14sup.png}
+	 \captionof{figure}{Projection de $FCO_2$ et $FCH_4$ sur les axes 1 et 4}
+	 \label{figCercle14sup}
+\end{center}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{Cercle24sup.png}
+	 \captionof{figure}{Projection de $FCO_2$ et $FCH_4$ sur les axes 2 et 4}
+	 \label{fig:Cercle24sup}
+\end{center}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{Cercle34sup.png}
+	 \captionof{figure}{Projection de $FCO_2$ et $FCH_4$ sur les axes 3 et 4}
+	 \label{fig:Cercle34sup}
+\end{center}
+
+\subsubsection{Commentaire }
+
+Sur l'ensemble des cercles, les flèches de $FCO_2$ et $FCH_4$ apparaissent courtes et centrées (notamment sur le cercle ~\ref{fig:Cercle24sup}). Cela suggère que ces variables sont peu corrélées à cet axe et donc difficile à  interpréter. 
+Sur la figure ~\ref{figCercle14sup}, la flèche de $FCO_2$ se projette plus sur l'axe 1. Cette proximité avec l'axe 1 renforce nos analyses plus haut disant que FCO2 est en opposition avec les phénomènes thermiques ( notamment TW et TS). En revanche, la projection sur l'axe 4 reste faible. De plus, nous avons calculé la corrélation entre les flux de GES et la composante 4. Nous avons obtenu: 
+
+\begin{itemize}
+    \item   $FCO_2$ et $FCH_4$ sont  corrélées négativement à l'axe,
+    \item la corrélation de $FCH_4$  est -0.41  tandis que celle de  $FCO_2$  est -0.13
+\end{itemize}
+Ces faibles valeurs confirment que l'axe 4 n'apporte pas d'information supplémentaire majeure sur la répartition de nos variables supplémentaires. En particulier, il n'aide pas à distinguer clairement les flux de $CO_2$ et $CH_4$.
+
+
+
+\subsubsection{Représentation sur l'axe factoriel groupé par mois }
+
+\begin{lstlisting}
+s.class(acpj$li[,c(1,4)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels", 
+        csub = 0.3)
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{Axe14bary.png}
+	 \captionof{figure}{Plan factoriel sur les axes 1 et 4 avec les mois}
+	 \label{fig:Axe14bary}
+\end{center}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{Axe24bary.png}
+	 \captionof{figure}{Plan factoriel sur les axes 2 et 4 avec les mois}
+	 \label{fig:Axe24bary}
+\end{center}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{Axe34bary.png}
+	 \captionof{figure}{Plan factoriel sur les axes 3 et 4 avec les mois}
+	 \label{fig:Axe34bary}
+\end{center}
+
+\subsubsection{Commentaire }
+
+
+Ces graphiques représentent les barycentres mensuels selon les axes (1 à 4).
+Sur la figure~\ref{fig:Axe14bary} définie par les axes 1 et 4, nous distinguons une séparation claire suivant l'axe 1 entre les mois chauds à gauche et les mois froids à droite. Cela confirme que l'axe 1 capte fortement les dynamiques thermiques. Les mois de transition comme Mai et Octobre se trouvent beaucoup plus au centre, ce qui est cohérent. En revanche, l'axe 4 ne semble pas apporter d'informations sur les mois. En effet, nous avons quelques ellipses qui s'étirent légèrement vers la vertical comme celui de Avril mais, pas de séparation claire. Cette orientation vers la verticale pourrait suggérer des conditions spécifiques opposant le flux de chaleur du sol et d'humidité.
+
+La figure~\ref{fig:Axe24bary}, définie par les axes 1 et 4, montre quant à elle une configuration différente. Les mois chauds (Juillet, Juin) sont regroupés vers le centre gauche, tandis que Septembre, Novembre et Décembre sont sur la droite du plan. Cependant, ce plan n'offre pas une séparation nette des mois. On note aussi que les mois comme septembre, Decembre, Novembre se superposent et cachent totalement d'autre comme Octoble,Janvier, ce qui complique l'interprétation.
+
+Le plan 3-4 égalament ne présente aucune séparation claire et les mois se superposent. La majorité des mois se regroupent au centre et il n'y a aucune structure interessante.
+En résumé, l’ajout de la composante 4 permet de raffiner le pourcentage d'inertie mais, sa contribution aux interprétations n'est pas aussi claire que celle des premier axes. 
+
+\subsubsection{Représentation sur l'axe factoriel groupé par années }
+
+\begin{lstlisting}
+s.class(acpj$li[,c(3,4)], fac = annee1, col = rainbow(length(unique(annee1))), 
+        sub = "Plan factoriel - Barycentres annuels", 
+        csub = 0.3)
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{baryannuel14.png}
+	 \captionof{figure}{Plan factoriel sur les axes 1 et 4 avec les années}
+	 \label{fig:baryannuel14}
+\end{center}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{baryannuel24.png}
+	 \captionof{figure}{Plan factoriel sur les axes 2 et 4 avec les années}
+	 \label{fig:baryannuel24}
+\end{center}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{baryannuel34.png}
+	 \captionof{figure}{Plan factoriel sur les axes 3 et 4 avec les années}
+	 \label{fig:baryannuel34}
+\end{center}
+
+\subsubsection{Commentaire }
+
+Ici, nous représentons les résultats de nos ACP regroupés par année. Sur les figures ~\ref{fig:baryannuel14} et ~\ref{fig:baryannuel34}, on remarque que toutes les années se superposent. Sur la ~\ref{fig:baryannuel34}, les années se regroupent au centre et la plus visible est 2021. On remarque aussi que sur cette figure, les ellipses ont l'air d'être des cercles et il y a beaucoup de dispersion des points dans tous les sens. Cela suggère qu'il n' y a pas de différenciation notable entre ces années sur ce plan. Aussi, cela limite fortement l'interprétation et souligne que l’axe 4 n'apporte pas d’information pertinente ici.
+Contrairement aux 2 autres figures, le plan sur la   ~\ref{fig:baryannuel24} montre une distinction claire de l'année 2019. Cette dernière a son éllipse qui s'étire beaucoup plus sur l'horizontal (l'axe 2), cela suggère que l'année 2019 traduit des conditions hydrologiques très différentes des autres. Ce résultat est cohérent avec nos analyses précédentes.
+En somme, si l’ajout de l’axe 4 augmente l’inertie expliquée, il n’apporte qu’une contribution limitée à la différenciation des années. Seul le plan 2-4 permet de révéler une information intéressante, en isolant l’anomalie hydrologique de 2019.
+
+\newpage
+\part{Modélisation des séries temporelles et prévisions }
+\setcounter{chapter}{0}
+
+\chapter{}
+
+\section{Introduction}
+
+ La modélisation des séries temporelles constitue une étape essentielle pour analyser l’évolution des gaz à effet de serre tels que le dioxyde de carbone ($CO_2$) et le méthane ($CH_4$). Elle repose sur un cadre méthodologique  visant à identifier les caractéristiques dynamiques de la série (tendance, saisonnalité, bruit), à garantir la stationnarité, puis à estimer un modèle adapté (ARIMA, avec ou sans régressseurs). \newline
+Dans cette partie, nous décrivons les principales étapes de modélisation : transformation de la série, sélection des paramètres, validation via l’analyse des résidus et enfin, prévision. Une attention particulière est portée à l’impact des composantes principales comme variables explicatives. L’objectif est d’obtenir des modèles robustes et interprétables, capables de prédire de façon fiable l’évolution future des concentrations en gaz à effet de serre.
+
+\section{Les différentes étapes de la modélisation de série temporelles}
+
+\subsection{Méthodologie ARIMA}
+
+\begin{center}
+\centering
+\includegraphics[width=0.6\textwidth]{methode_arima.png}
+\captionof{figure}{Méthodologie ARIMA}
+\label{fig:ARIMA}
+\end{center}
+
+\subsection{Quelques détails sur les différentes parties théoriques}
+
+\subsubsection{a- Analyse de données}
+Pour étudier une série temporelle, on doit s’intéresser généralement à plusieurs aspects. On examine d’abord son comportement global : est-elle d’un point de vue macroscopique, croissante, décroissante... ? Ce qui donne la tendance de la série .
+Ensuite, on peut être amené à repérer un éventuel comportement saisonnier :
+y a-t-il dans cette série un élément qui revient plus ou moins régulièrement dans
+toutes les observations ?
+
+\subsubsection{b- Stationnarisation}
+\paragraph{Définition:} 
+ Une série $y_t$ est dite stationnaire si : \newline
+- $E(y_t)=u$, constante indépendante de $t$ ( le temps) \newline
+- $cov(y_t, y_{t-l})$ ne dépend que de $l$ (un entier)
+\newline 
+\newline 
+Après avoir analysé le comportement de la série, on peut être en mesure d’affirmer son état stationnaire . Il est nécessaire de vérifier si la série est stationnaire ou pas avant de poursuivre la modélisation. Et cela se fait aussi par la lecture des chronogrammes (ACF, PACF), lagplot, aussi par des test de Dickey Fuller (absence de racine unité dans la partie autorégressive, KPSS …
+
+\subsubsection{c- Identification}
+Comment identifier les ordres p et q du modèle ARMA(p,q)?
+\paragraph{Principe:}
+ - Comparer les fonctions d’autocorrélation (ACF) et d’autocorrélation partielle (PACF) théoriques (donc connues) à fonctions estimées à partir de la série temporelle ou échantillons (donc empirique) \newline
+- Rechercher une correspondance entre un modèle ARMA(p,q) théorique et le processus générateur de la série temporelle 
+
+\subsubsection{d- Estimation}
+Après avoir déterminé p et q,  on  estime les polynômes P et Q  qui sont les polynômes caractéristiques de la partie autorégressive et la partie moyenne mobile .
+
+\subsubsection{e-  Validation et choix du modèle}
+
+Suite à l’identification de p et q et à l’estimation des polynômes P et Q , On valide le modèle par un test de blancheur ou la visualisation des autocorrélations de ses résidus  . Si le modèle est validé, on passe à la prévision, dans le cas contraire ,  on retourne à l’étape de l’identification des paramètres . \newline
+NB: La partie modélisation se fait sur environ 90 \% des données brutes
+
+\subsubsection{f-  Prévision}
+On fait une prévision sur les périodes dont les données sont déjà connues,  avec le modèle validé. 
+On fait ensuite la comparaison des données prédites avec celles déjà connues pour voir la qualité de la prévision.
+
+\section{Application sur nos données}
+
+\subsection{Les composantes principales}
+Pour décomposer les composantes principales ainsi que les séries des gaz à effet de serre en leurs différentes composantes (tendance, saisonnalité et bruit), nous utiliserons la fonction \textbf{decompose()}
+. Cette fonction calcule notamment la tendance par la méthode des \textbf{moyennes mobiles}, ce qui est particulièrement adapté lorsque les séries sont additives.
+
+\subsubsection{a- Composante 1}
+
+\begin{itemize}
+    \item Tendance et saisonnalité
+\end{itemize}
+
+\begin{lstlisting}
+af_1<-ts(acp$li[,1], start =c(2017,19),frequency = 365 )
+af_11 <- decompose(af_1)
+plot(af_1)
+plot(af_11)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{cp1_chrono.png}
+\captionof{figure}{Chronogramme de la série de la composante 1}
+\label{fig:cp1}
+\end{center}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{decomp_cp1.png}
+\captionof{figure}{Décomposition de la série de la composante 1}
+\label{fig:decomp_cp1}
+\end{center}
+
+D'après la figure ~\ref{fig:decomp_cp1}, la série issue de la composante principale 1 présente un aspect saisonnier, avec une tendance globalement stable en 2017-2018, décroissante en 2019, puis à nouveau croissante par la suite. On observe un phénomène particulier en 2019, qui semble avoir perturbé la dynamique des variables liées à la température et à la profondeur de la nappe phréatique.
+
+\subsubsection{b- Composante 2}
+\begin{itemize}
+    \item Tendance et saisonnalité
+\end{itemize}
+\begin{lstlisting}
+af_2<-ts(acp$li[,2], start =c(2017,19),frequency = 365 )
+af_22 <- decompose(af_2)
+plot(af_2)
+plot(af_22)
+\end{lstlisting}
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{cp2_chrono.png}
+\captionof{figure}{Chronogramme de la série de la composante 2}
+\label{fig:cp2_chrono}
+\end{center}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{decomp_cp2.png}
+\captionof{figure}{Décomposition de la série de la composante 2}
+\label{fig:decomp_cp2}
+\end{center}
+\vspace{1em}
+La série observée sur la composante 2 présente des valeurs plus faibles pendant l’été, ce qui correspond aux variables liées à l’hydrologie.
+On observe une hausse de la tendance en 2019, qui commence ensuite à revenir à la normale à partir de 2020.
+Le phénomène observé sur les autres composantes semble également avoir affecté celle-ci, mais son effet paraît plus temporaire.\par
+
+
+\subsubsection{c- Composante 3}
+
+\begin{itemize}
+    \item Tendance et saisonnalité
+\end{itemize}
+
+\begin{lstlisting}
+af_3<-ts(acp$li[,3], start =c(2017,19),frequency = 365 )
+af_33 <- decomp(af_3)
+plot(af_3)
+plot(af_33)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{cp3_chrono.png}
+\captionof{figure}{Chronogramme de la série de la composante 3}
+\label{fig:cp3_chrono}
+\end{center}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{decomp_cp3.png}
+\captionof{figure}{Décomposition de la série de la composante 3}
+\label{fig:cp3_decomp}
+\end{center}
+\vspace{1em}
+Pendant l’été, les variables liées aux phénomènes atmosphériques (radiation longue onde, vent) et aux phénomènes thermiques directs (chaleur sensible, rayonnement court) présentent, d’après la série observée, un flux plus faible.
+On observe également une chute marquée de la tendance en 2019, ainsi qu’une baisse moins prononcée vers la fin de 2020.
+La composante 2, qui regroupe ces variables, apparaît comme saisonnière, en raison de la dynamique similaire qui se répète chaque année.\par
+
+
+\subsubsection{d- Composante 4}
+
+\begin{itemize}
+    \item Tendance et saisonnalité
+\end{itemize}
+
+\begin{lstlisting}
+af_4<-ts(acp$li[,4], start =c(2017,19),frequency = 365 )
+af_44 <- decompose(af_4)
+plot(af_4)
+plot(af_44)
+\end{lstlisting}
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{cp4_chrono.png}
+	  \captionof{figure}{Chronogramme de la série de la composante 4}
+	   \label{fig:cp4}
+\end{center} 
+
+\begin{center}
+	 \includegraphics[width=\textwidth]{decomp_cp4.png}
+	  \captionof{figure}{Décomposition de la série de la composante 4}
+	   \label{fig:cp44}
+\end{center}
+\vspace{1em}
+L’humidité relative (RH) et les variables liées au flux de chaleur du sol (Soil heat flux) à l’axe 4, présentent globalement une tendance croissante.
+Cette tendance connaît toutefois une chute à partir de 2019, comme observé pour d’autres composantes.
+Par ailleurs, l’aspect saisonnier de cette composante est bien marqué et facilement identifiable.
+
+
+\subsection{Les gaz à effets de serre}
+
+\subsubsection{a- $CO_2$}
+
+Visualisons tout d'abord le chronogramme de $CO_2$ \\
+
+\begin{lstlisting}
+plot(tco2)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{co2_chrono.png}
+\captionof{figure}{Chronogramme de $CO_2$}
+\label{fig:co2_1}
+\end{center}
+
+En observant le chronogramme du flux de CO2, la saisonnalité est peu observable mais, une tendance claire est présente. Nous passons donc par une décomposition  pour plus de précision. 
+
+\begin{itemize}
+    \item Décomposition de la série
+\end{itemize}
+
+\begin{lstlisting}
+dec_co2 <- stl(tco2, s.window = "periodic")
+plot(dec_co2)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{decomp_co2.png}
+\captionof{figure}{Décomposition de $CO_2$}
+\label{fig:co2_2}
+\end{center}
+
+\begin{itemize}
+    \item Tendance
+\end{itemize}
+
+\begin{lstlisting}
+acf(co2)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{acf_co2.png}
+\captionof{figure}{ACF de $CO_2$}
+\label{fig:acf_co2}
+\end{center}
+
+Pour $CO_2$, la décroissance est lente, on peut affirmer la présence d'une tendance. \\
+ Et sur le graphique de décomposition, on observe une croissance en 2017, une décroissnace entre fin 2017 et fin 2018 (ce qui est probablement due aux canicules obsèrevées lors des étés ) et ensuite une croissance de fin 2018 jusqu'en 2022 \\
+
+
+\begin{itemize}
+    \item Saisonnalité
+\end{itemize}
+
+  Dans head, on a " Frequency = 365 " pour les deux séries, donc ce sont des séries journalières avec une saisonnalité annuelle , ce qui est aussi visible sur le graphique de décomposition.\\
+Pour plus de detail, on va transformer notre donnée en donnée mensuelle .\par
+\subsubsection*{Agrégation par mois} \par
+
+\begin{lstlisting}
+An <- substr(dates, 1, 4)
+Mois <- substr(dates, 6, 7)
+AnMois <- as.numeric(paste(An, Mois, sep = "")) 
+data_mois <- aggregate(df[,-1], by = list(AnMois), FUN = sum) 
+colnames(data_mois)[1] <- "AnMois"
+head(data_mois)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{table_mois.png}
+\captionof{figure}{Données mensuelles}
+\label{fig:table_mois}
+\end{center}
+
+Examinons maintenant le month.plot de la série mensuelle de $CO_2$ .\\
+
+\begin{lstlisting}
+diox <- ts(data_mois[,3], start = c(2017, 1), frequency = 12) # Serie mensuelle de CO2
+monthplot(diox, ylab = "CO2",main = "Profil saisonnier mensuel de CO2",labels = substr(month.name,1,3))
+\end{lstlisting}
+
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{monthplot_co2.png}
+\captionof{figure}{month.plot de $CO_2$}
+\label{fig:monthplot_co2}
+\end{center}
+
+Chaque chronogramme represent le flux de $CO_2$ par an.\\
+S'il n'y avais pas l'aspect saisonnier, Ces 12 chronogrammes se ressembleraient, ce qui n'est pas le cas ici et donc il y'a une saisonnalité. \\
+-  On remarque qu'il y'a plus d'absorption (signe négatif) de $CO_2$ dans le mois de Juin,Juillet et Ao\^ut que les autres mois possiblement due à l'activité végétale (photosynthèse accrue en été = absorption de $CO_2$ et rejet de $CO_2$ pendant le jour). \\
+-  On remarque aussi plus de rel\^achement $CO_2$ dans les mois hivernaux (Décembre, Janvier) par la tourbière, ce qui serait due à la perte de feuilles de plusieurs plantes et donc l'absence de photosynthèse de ces derniers\\
+
+ \subsubsection{Conclusion:} De tout ce qui précède, on peut affirmer que notre série est saisonnière de saisonnalité 12 mois ou 365 jours.
+
+
+\subsubsection{b- CH4}
+\begin{lstlisting}
+plot(tch4)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{ch4_chrono.png}
+\captionof{figure}{Chronogramme de $CH_4$}
+\label{fig:ch4_chrono}
+\end{center}
+
+
+De même pour $CH_4$, on note une tendance apparente. La décomposition est utile ici aussi pour une analyse plus claire.\\
+
+\begin{itemize}
+    \item Décomposition de la série
+\end{itemize}
+
+\begin{lstlisting}
+dec_ch4 <- decompose(tch4)
+plot(dec_ch4)
+\end{lstlisting}
+
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{decomp_ch4.png}
+\captionof{figure}{Décomposition de $CH_4$}
+\label{fig:ch4_decomp}
+\end{center}
+
+
+\begin{itemize}
+    \item Tendance
+\end{itemize}
+
+\begin{lstlisting}
+acf(ch4)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{acf_ch4.png}
+\captionof{figure}{ACF de $CH_4$}
+\label{fig:acf_ch4}
+\end{center}
+\vspace{1em}
+
+Pour le $CH_4$, la décroissance des corrélations est lente d’après la figure~\ref{fig:acf_ch4}, ce qui indique la présence d’une tendance.\\
+On observe que cette tendance commence déjà à diminuer dès 2018, et cette baisse s’accentue en 2019. En 2020, la tendance retrouve ensuite sa dynamique normale, orientée à la hausse.
+\vspace{2em}
+
+\begin{itemize}
+    \item Saisonnalité
+\end{itemize}
+
+La série de $CH_4$ présente une saisonnalité bien marquée, caractérisée par une forte libération de méthane pendant les mois d’été d'après figure~\ref{fig:ch4_decomp}\par
+Analysons également le \textit{month.plot} de $CH_4$ afin d’examiner plus précisément sa nature saisonnière.
+
+
+\begin{lstlisting}
+diox <- ts(data_mois[,4], start = c(2017, 1), frequency = 12) # Serie mensuelle de CH4
+monthplot(diox, ylab = "CH4",main = "Profil saisonnier mensuel de CH4",labels = substr(month.name,1,3))
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{monthplot_ch4.png}
+\captionof{figure}{Monthplot de $CH_4$}
+\label{fig:monthplot_ch4}
+\end{center}
+ \vspace{1em}
+S'il n’y avait pas de composante saisonnière, ces 12 chronogrammes se ressembleraient fortement, ce qui n’est pas le cas ici :
+on observe des variations récurrentes au cours de l’année, ce qui indique la présence d’une saisonnalité.\par
+
+On remarque notamment qu’il y a plus de libération de $CH_4$ durant les mois d’été (d’avril à août), ce qui peut s’expliquer par l’augmentation de la température --> cela favorise l’activité des micro-organismes méthanogènes responsables de la production de $CH_4$.\\
+De plus, si la nappe phréatique reste élevée durant cette période, les conditions anaérobies sont maintenues --> ce qui conduit à une forte émission de $CH_4$ par la tourbière.
+
+\subsubsection{Conclusion}
+De tout ce qui précède, on peut affirmer que la série temporelle des flux de $CH_4$ présente une saisonnalité annuelle, avec une période de 12 mois (ou 365 jours).
+ \vspace{2em}
+ 
+Les  parties précédentes nous ont permis de conna\^itre la nature des séries de $CO_2$ et $CH_4$ en générales, et la nature des composantes principales qui nous serviront de régresseurs par la suite.
+ \vspace{2em}
+
+Par la suite, nous allons estimer différents modèles afin d’identifier ceux qui reproduisent le mieux les trajectoires des gaz à effet de serre.  
+Cette démarche reposera sur le choix de diverses combinaisons de composantes principales et sur de diverses périodes, dans le but de sélectionner celles qui servent de meilleurs régresseurs.\par
+ \vspace{1em}
+ 
+Le test de stationnarité, la stationnarisation si nécessaire, l’identification des paramètres ainsi que l’estimation des coefficients seront réalisés automatiquement grâce à la fonction \texttt{auto.arima}, que nous utiliserons par la suite.\\
+ \vspace{2em}
+ 
+\subsection*{A- Régresseurs utilisés : Composantes 1 et 3 pour le CO\textsubscript{2} ; composantes 1, 3 et 4 pour le CH\textsubscript{4} }
+
+
+Commencons d'habord par définir les régresseurs.
+\begin{lstlisting}
+rg1<-as.matrix(acp$li[,c(1,3)]) 
+rg2<-as.matrix(acp$li[,c(1,3,4)]) 
+\end{lstlisting}
+
+\subsubsection{Modèle 1:  Modèle avec régressseurs tenant compte des données de 2020}
+Scindons ensuite $CO_2$ et $CH_4$ en 2 données : données d'entrainement et données test. \newline
+
+\begin{itemize}
+    \item Données d'entrainement 2017-2020
+\end{itemize}
+
+\begin{lstlisting}
+tco2_train <- window(tco2, end = c(2020, 365)) 
+reg1_train<-rg1[1:length(tco2_train),]
+
+tch4_train <- window(tch4, end = c(2020, 365))
+reg2_train<-rg2[1:length(tch4_train),] 
+\end{lstlisting}
+
+\begin{itemize}
+    \item Données test 2021
+\end{itemize}
+
+\begin{lstlisting}
+tco2_test <- window(tco2, start = c(2021, 1)) 
+reg1_test <- rg1[(length(tco2_train)+1):(length(tco2_train)+length(tco2_test)), ]
+
+tch4_test <- window(tch4, start = c(2021, 1)) 
+reg2_test <- rg2[(length(tch4_train)+1):(length(tch4_train)+length(tch4_test)), ]
+\end{lstlisting}
+
+\begin{itemize}
+    \item Analyse du modèle
+  \end{itemize}  
+
+
+* \textbf{ CO\textsubscript{2}}\\
+\\
+Passons à l'entra\^inement en déterminant un modèle (permettant de faire des prévisions avec des phénomenès observés)
+
+\begin{lstlisting}
+mod_co22 <- auto.arima(tco2_train, xreg = reg1_train )   
+summary(mod_co22)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{mod_co2_17_21.png}
+\captionof{figure}{modèle de $CO_2$ sur 2017-2020}
+\label{fig:mod_co2_17_21}
+\end{center}
+
+Le modèle nous fait savoir que la série de $CO_2$ avec régresseurs est différenciée pour être stationnaire. cette non-stationnarité est liée certainement aux régresseurs .\\
+
+Analysons les résidus de ce modèle afin de conclure la validité du modèle
+  
+\begin{itemize}
+    \item Résidus
+\end{itemize}
+
+\begin{lstlisting}
+tsdisplay(residuals(mod_co22), main ="Residus du modele ARIMAX saisonnire de CO2 sur la periode d'essaie(debut 2017-fin 2020)") 
+\end{lstlisting}
+
+\vspace{2em}
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{residus_co2_17_21.png}
+\captionof{figure}{Residus de $CO_2$ sur 2017-2020}
+\label{fig:residus_co2_17_21}
+\end{center}
+\vspace{1em}
+
+Les autocorrelations ne nous permettent pas d'affirmer clairement que les résidus du modèle de CO2 sont du bruit blanc à cause du fait que certains sont légèrement sortie de la bande.\par
+Faisons le test de blancheur pour vérifier si les résidus sont du bruit blanc ou pas, sous les hypothèses\\ 
+
+ \vspace{1em}
+
+\begin{itemize}
+    \item H0 :"les résidus ne sont pas autocorrélés ( c’est du bruit blanc)"\par
+    contre 
+    \item H1 :"les résidus sont autocorrélés ( modèle mal ajusté)"\par  au niveau de risque 5\,\%
+\end{itemize}
+ \vspace{1em}
+
+\begin{lstlisting}
+Box.test(residuals(mod_co22), lag = 30, type = "Ljung-Box")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{tblanc_residus_co2_17_21.png}
+\captionof{figure}{Test de blancheur de $CO_2$ sur 2017-2020}
+\label{fig:tblanc_residus_co2_17_21}
+\end{center}
+
+\paragraph{}
+Pour ce test, la p-valeur est supérieure au seuil de significativité $\alpha = 0{,}05$. 
+Par conséquent, on ne rejette pas l’hypothèse nulle $H_0$, ce qui indique que les résidus peuvent être considérés comme du bruit blanc. 
+Cela suggère que le modèle est correctement ajusté .\par
+ 
+ \vspace{1em}
+Analysons quelques statistiques de ce modèles.\par
+
+\begin{lstlisting}
+accuracy(mod_co22)[, "RMSE"] /sd(tco2)
+accuracy(mod_co22)[, "RMSE"] /abs(mean(tco2))
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.6\textwidth]{rmse_co2_2017_2020.png}
+\captionof{figure}{statistique du modèle de $CO_2$ sur 2017-2020}
+\label{fig:rmse_co2_2017_2020}
+\end{center}
+
+RMSE < Ecart-type : le modèle obtenu pour $CO_2$ explique une part significative de la variabilité, Mais elle est sensiblement superieure à la moyenne, ce qui indique que le modèle est correct, mais pas très précis.\newline
+\newline
+
+\begin{itemize}    
+    \item Prévision sur 2021
+\end{itemize}
+
+\vspace{1em}
+Nous allons réaliser la prévision sur l’horizon de l’année 2021 et vérifier ensuite la superposition des valeurs prédites avec les données réellement observées pour cette période.\par
+
+\begin{lstlisting}
+par(mfrow=c(1,2))
+pred_co2 <- forecast(mod_co22, h = 365, xreg = reg1_test)
+plot(pred_co2, main = "Prevision de CO2 pour 2021")
+plot(tco2,main="la serie originale" )
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{prev_co2_21.png}
+\captionof{figure}{Prévision de $CO_2$ sur 2021}
+\label{fig:prev_co2_21}
+\end{center}
+ \vspace{1em}
+
+\paragraph{}
+En observant le graphique de la prédiction, on constate que celle-ci reproduit globalement pas mal les fluctuations de la série de $CO_2$ pour l’année 2021. 
+Pour compléter cette analyse qualitative, nous allons maintenant examiner quelques statistiques descriptives des erreurs de prévision, afin d’évaluer plus précisément la qualité du modèle.
+
+\vspace{1em}
+\begin{lstlisting}
+accuracy(tco2_test,pred_co2$mean)
+\end{lstlisting}
+
+ \vspace{1em}
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{accu_co2_21.png}
+\captionof{figure}{ accuracy de la prévision de $CO_2$ sur 2021}
+\label{fig:accu_co2_21}
+\end{center}
+
+ \vspace{1em}
+MAPE est élevé donc les données surestimées et sousestimées sont nombreuses, ce qui montre que la prédiction n'est pas aussi bonne que ça, mais c'est mieux qu'un modèle naif (répétition de la dernière sur le futur) a cause de (Theil's U < 1) .\par
+
+*\textbf{CH\textsubscript{4}}\par
+
+Pour $CH_4$ aussi, on refait les mêmes choses
+
+\begin{itemize}
+    \item Analyse du modèle
+  \end{itemize}  
+
+\begin{lstlisting}
+mod_ch44 <- auto.arima(tch4_train, xreg = reg2_train )   
+summary(mod_ch44)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.7\textwidth]{mod_ch4_17_21.png}
+\captionof{figure}{modèle de $CH_4$ sur 2017-2020}
+\label{fig:mod_ch4_17_21}
+\end{center}
+
+ La série de CH4 régressée est toujours stationnaire. Donc les régresseurs n'ont pas affectés la stationnarité de la série.\par
+Analysons les résidus de ce modèle afin de conclure la validité de ce modèle.
+
+\begin{itemize}    
+    \item Résidus
+\end{itemize}
+
+\begin{lstlisting}
+tsdisplay(residuals(mod_ch44), main ="Residus du modele ARIMAX saisonniere de CH4 sur la periode d'essaie(debut 2017-fin 2020)") 
+\end{lstlisting}
+
+\vspace{1em}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{residus_ch4_17_21.png}
+\captionof{figure}{Residus de $CH_4$ sur 2017-2020}
+\label{fig:residus_ch4_17_21}
+\end{center}
+\vspace{1em}
+Les autocorrelations ne nous permettent pas d'affirmer clairement que les résidus du modèle de $CH_4$ sont du bruit blanc à cause du fait que certains sont légèrement sortie de la bande .\\
+Passons maintenant au test de blancheur sur les résidus pour être plus précis sur sa nature.\\
+\vspace{1em}
+\begin{lstlisting}
+Box.test(residuals(mod_ch44), lag = 30, type = "Ljung-Box")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{tblanc_residus_ch4_17_21.png}
+\captionof{figure}{Test de blancheur de $CH_4$ sur 2017-2020}
+\label{fig:tblanc_residus_ch4_17_21}
+\end{center}
+\vspace{1em}
+
+En ce qui concerne le test de blancheur, la p-valeur est supérieure eu risque(0.05), donc on ne rejette pas "les résidus  sont du bruit blancs" et donc on peut considérer les résidus du modèle de $CH_4$ comme etant du bruit blanc.\par
+
+\vspace{1em}
+ En ce qui concerne ce modèle, en analysant la sortie suivante:
+ 
+\begin{lstlisting}
+mean(tch4); sd(tch4) 
+accuracy(mod_ch44)[, "RMSE"]
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=0.6\textwidth]{rmse_ch4_2017_2021.png}
+\captionof{figure}{statistique du modèle de $CH_4$ sur 2017-2020}
+\label{fig:rmse_ch4_2017_2021}
+\end{center}
+\vspace{1em}
+on peut dire que RMSE est inférieure à la moyenne et aussi inférieure à l'écart-type, donc le modèle obtenu pour $CH_4$ explique une bonne part de variabilité .\par
+\vspace{2em}
+
+\begin{itemize}    
+    \item Prévision sur 2021
+\end{itemize}
+
+On réalise maintenant la prévision sur l'horizon 2021 et vérifier sa superposition aux données connues.\\
+
+\begin{lstlisting}
+par(mfrow=c(1,2))
+pred_ch4 <- forecast(mod_ch44, h = 365, xreg = reg2_test) 
+plot(pred_ch4, main = "Prevision de CH4 pour 2021")
+plot(tch4,main="la serie originale" )
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{prev_ch4_21.png}
+\captionof{figure}{Prévision de $CH_4$ sur 2021}
+\label{fig:prev_ch4_21}
+\end{center}
+
+ Analysons la qualité de la prévision avec la commande \texttt{accuracy()}.
+
+\begin{lstlisting}
+accuracy(tch4_test,pred_ch4$mean)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{accu_ch4_21.png}
+\captionof{figure}{accuracy de la prévision de $CH_4$ sur 2021}
+\label{fig:accu_ch4_21}
+\end{center}
+ 
+ Les mesures d'erreurs de précision de la prévision nous montrent que MAPE(Erreur Moyenne Absolue en Pourcentage) est élevé donc les données surestimées et sous-estimées sont nombreuses , ce qui montre que la prédiction n'est pas aussi bonne que ça, mais c'est très mieux qu'un modèle naif a cause de (Theil's U <1).
+
+
+\subsection*{Modèle 2 : Modèle avec régressseurs sans les données de 2020} 
+
+Avant tout, commençons avec la construction des données et des régresseurs sur la période train et test.\par
+
+Données d'entrainement
+\begin{lstlisting}
+tco2_17_19 <- window(tco2, end = c(2019, 365)) 
+reg_17_19<-rg1[1:length(tco2_17_19),]
+
+tch4_17_19 <- window(tch4, end = c(2019,365 ))
+r_17_19<-rg2[1:length(tch4_17_19),] 
+\end{lstlisting}
+
+Données test
+\begin{lstlisting}
+tco2_20_21 <- window(tco2, start = c(2020, 1)) 
+reg_20_21 <- rg1[(length(tco2_17_19) + 1):(length(tco2_17_19) + length(tco2_20_21)), ]
+
+tch4_20_21 <- window(tco2, start = c(2020, 1))  
+r_20_21 <- rg2[(length(tch4_17_19) + 1):(length(tch4_17_19) + length(tch4_20_21)), ]
+\end{lstlisting}
+\vspace{1em}
+
+\begin{itemize}
+    \item Analyse du modèle
+\end{itemize}
+
+\textbf{CO\textsubscript{2}}\\
+\vspace{1em}
+\begin{lstlisting}
+mod_co2_17_19 <- auto.arima(tco2_17_19, xreg = reg_17_19 )   
+summary(mod_co2_17_19)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{mod_co2_17_19.png}
+\captionof{figure}{Modèle de $CO_2$ sur 2017-2019}
+\label{fig:mod_co2_17_19}
+\end{center}
+\vspace{1em}
+\textbf{CH\textsubscript{4}}\\
+\vspace{1em}
+\begin{lstlisting}
+mod_ch4_17_19 <- auto.arima(tch4_17_19, xreg = r_17_19 )   
+summary(mod_ch4_17_19)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{mod_ch4_17_19.png}
+\captionof{figure}{Modèle de $CH_4$ sur 2017-2019}
+\label{fig:mod_ch4_17_19}
+\end{center}
+ \vspace{1em}
+
+\begin{itemize}
+    \item Résidus
+\end{itemize}
+
+Passons directement au test de blancheur pour conclure la nature des residus.\par
+\begin{lstlisting}
+Box.test(residuals(mod_co2_17_19), lag = 30, type = "Ljung-Box")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{tblanc_residus_co2_17_19.png}
+\captionof{figure}{test de blancheur du modèle de  $CO_2$ }
+\label{fig:tblanc_residus_co2_17_19}
+\end{center}
+\vspace{1em}
+ 
+\begin{lstlisting}
+Box.test(residuals(mod_ch4_17_19), lag = 30, type = "Ljung-Box")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{tblanc_residus_ch4_17_19.png}
+\captionof{figure}{test de blancheur du modèle de $CH_4$}
+\label{fig:tblanc_residus_ch4_17_19}
+\end{center}
+
+
+Ici les p-valeurs des deux test sont inferieures au risque(0.05), donc les résidus du modèle de $CO_2$ et de $CH_4$ sont du bruit blanc.\par 
+
+On peut donc passer à la prévision du flux des gaz à effets de serre sur 2020-2021;
+
+\begin{itemize}
+    \item Prévision
+\end{itemize}
+
+Celui de $CO_2$ nous donne :
+\begin{lstlisting}
+par(mfrow=c(1,2))
+
+pred_co2_20_21 <- forecast(mod_co2_17_19, h = 365*2, xreg =reg_20_21  )
+
+plot(pred_co2_20_21, main = "Prevision de CO2 pour 2020-2021")
+plot(tco2,main="la serie originale" )
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{prev_co2_20_21.png}
+\captionof{figure}{chronogramme de la prédiction de $CO_2$}
+\label{fig:prev_co2_20_21}
+\end{center}
+\vspace{1em}
+
+Visuellement, on voit que les prévision sont bonnes, à cause de la dynamique et la saisonnalité qui sont concervées , et aussi la fluctuation de la prévision augmente progressivement avec le temps\\
+
+Voyons pour $CH_4$ aussi 
+\begin{lstlisting}
+par(mfrow=c(1,2))
+
+pred_ch4_20_21 <- forecast(mod_ch4_17_19, h = 365*2, xreg =r_20_21  )
+
+plot(pred_ch4_20_21, main = "Prevision de CH4 pour 2018-2021")
+plot(tch4,main="la serie originale" ) 
+\end{lstlisting}
+\vspace{1em}
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{prev_ch4_20_21.png}
+\captionof{figure}{chronogramme de la prédiction de $CH_4$}
+\label{fig:prev_ch4_20_21}
+\end{center}
+\vspace{1em}
+De même ici aussi, on remarque la conservation de la dynamique et de la saisonnalité.\par 
+
+Voyons quelques statistiques de la prévision.
+\vspace{1em}
+\begin{lstlisting}
+accuracy(tco2_20_21,pred_co2_20_21$mean)
+\end{lstlisting}
+\vspace{1em}
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{accu_co2_20_21.png}
+\captionof{figure}{statistique de la prévision de $CO_2$}
+\label{fig:accu_co2_20_21}
+\end{center}
+\vspace{1em}
+Les statistiques de la prévision de $CO_2$ nous montre que l'Erreur Moyenne Absolue en Pourcentage (MAPE) est élevée, ce qui montre qu'on a plus d'erreur que de bonne valeur dans la prédiction  
+
+\begin{lstlisting}
+accuracy(tch4_20_21,pred_ch4_20_21$mean)
+\end{lstlisting}
+\vspace{1em}
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{accu_ch4_20_21.png}
+\captionof{figure}{statistique de la prévision de $CH_4$}
+\label{fig:accu_ch4_20_21}
+\end{center}
+\vspace{1em}
+L'Erreur Moyenne Absolue en Pourcentage (MAPE) est un peu élevée, ce qui montre qu'on a un peu d'erreur que de bonne valeur dans la prédiction. Les autres indicateurs montrent que le modèle est bon, mais toujours perfectible. 
+
+
+
+\subsection*{Modèle 3 : Modèle sans l'année 2019( année de secheresse)}
+\vspace{1em}
+On va faire un modèle sur l'année (2017-2018) et faire la prévision sur les années qui suivent  pour voir l'impact de l'année de sécheresse sur le flux de ces gaz.
+
+\paragraph{CO\textsubscript{2}}
+\vspace{1em}
+
+\begin{lstlisting}
+tco2_17_18 <- window(tco2, end = c(2018, 365))  
+reg1_17_18<-rg1[1:length(tco2_17_18),]
+
+tco2_19_21 <- window(tco2, start = c(2019, 1))
+reg1_19_21 <- rg1[(length(tco2_17_18) + 1):(length(tco2_17_18) + length(tco2_19_21)), ]
+\end{lstlisting}
+
+\begin{lstlisting}
+mod_co2_17_18 <- auto.arima(tco2_17_18, xreg = reg1_17_18 )   
+summary(mod_co2_17_18)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{mod_co2_17_18.png}
+\captionof{figure}{modèle de $CO_2$ sur 2017-2018}
+\label{fig:mod_co2_17_18}
+\end{center}
+\vspace{1em}
+
+La modèle de $CO_2$ sans l'année 2019 minimise bien les mesures d'erreurs sauf MAPE qui est toujours élevé et c'est un modèle stationnaire .
+
+Comme principe, vérifions la blancheur des résidus
+
+\begin{lstlisting}
+Box.test(residuals(mod_co2_17_18), lag = 30, type = "Ljung-Box")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{tblanc_residus_co2_17_18.png}
+\captionof{figure}{test de blancheur des residus de  $CO_2$ }
+\label{fig:tblanc_residus_co2_17_18}
+\end{center}
+ \vspace{1em}
+
+\paragraph{CH\textsubscript{4}}
+\vspace{1em}
+
+\begin{lstlisting}
+tch4_17_18 <- window(tch4, end = c(2018,365 )) 
+reg2_17_18<-rg2[1:length(tch4_17_18),]
+
+tch4_19_21 <- window(tch4, start = c(2019, 1)) 
+reg2_19_21 <- rg2[(length(tch4_17_18) + 1):(length(tch4_17_18) + length(tch4_19_21)), ]
+\end{lstlisting}
+
+\begin{lstlisting}
+mod_ch4_17_18 <- auto.arima(tch4_17_18, xreg = reg2_17_18 )   
+summary(mod_ch4_17_18)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{mod_ch4_17_18.png}
+\captionof{figure}{modèle de $CH_4$ sur 2017-2018}
+\label{fig:mod_ch4_17_18}
+\end{center}
+
+Le modèle de $CH_4$, ici sans l'année 2019 minimise aussi bien les mesures d'erreurs sauf MAPE qui reste toujours élevé et c'est un modèle non stationnaire , qui a été différencié une fois pour être stationnaire.
+ \vspace{1em}
+ Faisons maintenant le test de blancheur des résidus
+
+\begin{lstlisting}
+Box.test(residuals(mod_ch4_17_18), lag = 30, type = "Ljung-Box")
+\end{lstlisting}
+On ne rejete donc pas la non blancheur des residus.
+ \vspace{1em}
+ 
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{tblanc_residus_co2_17_18.png}
+\captionof{figure}{test de blancheur des residus de  $CH_4$ }
+\label{fig:tblanc_residus_ch4_17_18}
+\end{center}
+
+Ici aussi, On ne rejette donc pas la non blancheur des résidus.\par
+\vspace{1em}
+
+Passons maintenant à la prévision sur l'année 2019-2021
+
+
+\paragraph{CO\textsubscript{2}}
+
+\begin{lstlisting}
+par(mfrow=c(1,2))
+
+pred_co2_19_21 <- forecast(mod_co2_17_18, h = 365*3, xreg =reg1_19_21  ) 
+
+plot(pred_co2_19_21, main = "Prevision de CO2 pour 2019-2021")
+plot(tco2,main="la serie originale" )
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{prev_co2_19_21.png}
+\captionof{figure}{Prévision de $CO_2$ sur 2019-2020}
+\label{fig:prev_co2_19_21}
+\end{center}
+ Visuellement, il semble que ce modèle a une meilleure prévision
+\paragraph{CH\textsubscript{4}}
+\vspace{1em}
+
+\begin{lstlisting}
+par(mfrow=c(1,2))
+
+pred_ch4_19_21 <- forecast(mod_ch4_17_18, h = 365*3, xreg =reg2_19_21  ) 
+
+plot(pred_ch4_19_21, main = "Prevision de CH4 pour 2019-2021")
+plot(tch4,main="la serie originale" )
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{prev_ch4_19_21.png}
+\captionof{figure}{Prévision de $CH_4$ sur 2019-2020}
+\label{fig:prev_ch4_19_21}
+\end{center}
+\vspace{1em}
+ La prévision al'air d'être conforme à la prévision, mais plus condensée en 2021 .
+
+\subsection*{Modèle 4 : Modèle sans régressseurs}
+
+Dans cette partie vérifions si un modèle conçu uniquement sur $CO_2$ et $CH_4$ capte mieux la variation de leur flux .\par
+
+On va suivre ici aussi les mêmes étapes que celles de la conception du modèle précédent.\par
+ \vspace{1em}
+Données d'entrainement sur 2017-2020
+\begin{lstlisting}
+tco2_train <- window(tco2, end = c(2020, 365)) 
+
+tch4_train <- window(tch4, end = c(2020, 365))
+\end{lstlisting}
+ \vspace{1em}
+Données test sur 2017-2020
+\begin{lstlisting}
+tco2_test <- window(tco2, start = c(2021, 1))
+
+tch4_test <- window(tch4, start = c(2021, 1))
+\end{lstlisting}
+
+\begin{itemize}
+    \item \textbf{Analyse du modèle}.
+\end{itemize}
+ \vspace{1em}
+Passons à l'entrainement en déterminant un modèle
+ \vspace{1em}
+
+\paragraph{CO\textsubscript{2}}
+
+\vspace{1em}
+\begin{lstlisting}
+mod_co2_sr <- auto.arima(tco2_train )   
+summary(mod_co2_sr)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{mod_co2_sr.png}
+\captionof{figure}{modèle de $CO_2$ sur 2017-2020 sans régresseurs}
+\label{fig:mod_co2_sr}
+\end{center}
+ \vspace{1em}
+Le modèle de CO2 sans régresseur est stationnaire. Mais on remarque que les critères, et l'erreur moyenne en pourcentage (MAPE) sont très élevées, donc ce modèle ne capte pas la dynamique du flux de $CO_2$ . \par
+Voyons quand même ce que donne le graphique de sa prévision sur 2021 .
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{prev_co2_sr.png}
+\captionof{figure}{Prévision de $CO_2$ sur 2021 }
+\label{fig:prev_co2_sr}
+\end{center}
+ \vspace{1em}
+La prévision de 2021 sur le graphique nous confirme la non robustesse du modèle . \par
+Ici, on n'a pas besoin d'étudier la blancheur des résidus car le modèle n'est pas intéressant d'après les informations préliminaires .
+ \vspace{1em}
+
+\paragraph{CH\textsubscript{4}}
+\vspace{1em}
+
+\begin{lstlisting}
+mod_ch4_sr <- auto.arima(tch4_train )   
+summary(mod_ch4_sr)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{mod_ch4_sr.png}
+\captionof{figure}{modèle de $CH_4$ sur 2017-2020 sans régresseurs}
+\label{fig:mod_ch4_sr}
+\end{center}
+\vspace{1em}
+
+Le modèle de $CH_4$ sans régresseur est aussi stationnaire.On remarque que les critères et l'erreur moyenne en pourcentage (MAPE) sont de faibles valeurs, donc ce modèle semble bien capté la dynamique du flux de $CH_4$ . \par
+Voyons ce que donne le graphique de sa prévision sur 2021 .
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{prev_ch4_sr.png}
+\captionof{figure}{Prévision de $CH_4$ sur 2021 }
+\label{fig:prev_ch4_sr}
+\end{center}
+\vspace{1em}
+La prévision de 2021 sur le graphique nous présente la faiblesse de la capacité de prédiction de ce modèle . \par
+Ici aussi, plus besoin d'étudier la blancheur des résidus  de ce modèle. 
+\vspace{2em}
+
+On a une idée sur ce  que sont les modèles construits sur les composantes avec lesquelles les GES sont corrélés. Passons maintenant à une autre catégorie de régresseurs avec les composantes principales.
+
+\vspace{2em}
+\subsection*{ B- Régresseurs de $CO_2$ et de $CH_4$  : les quatres premières composantes principales} 
+ \vspace{2em}
+Commençons par définir ces régresseurs :
+
+\begin{lstlisting}
+rg1<-as.matrix(acp$li[,c(1,2,3,4)]) 
+rg2<-as.matrix(acp$li[,c(1,2,3,4)])
+\end{lstlisting}
+\vspace{1em}
+Dans cette partie, on va refaire les mêmes modèles que la partie précédente, qu'on ne va pas étaler ici, mais on va exploiter leurs résultats pour la suite.
+\vspace{1em}
+\subsection{Comparaison des modèles}
+ Ici nous allons effectuer une comparaison entre tous les modèles, sur les deux catégories de régresseurs; sauf celui fait sans régresseur.\par
+
+Visualisons d'abord la superposition des chronogrammes des données prédites et observées.\par
+\vspace{1em}
+\textbf{$CO_2$ :}
+
+\begin{lstlisting}
+tco2_21 <- window(tco2, start = c(2021, 1)) 
+matrix_3<-cbind(tco2_21,pred_co2$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_3, plot.type = "single", lty = c(1,2), col = c("black","red"), xlab = "dates", ylab = "CO2", main = "Superposition de CO2 predit et la serie observee 2021 ", cex.main = 1.2)
+legend(par("usr")[1],par("usr")[4], legend = c("CO2 Observe","CO2 predit"),col = c("black","red"), lty = c(1,2),lwd=1,bty = "n")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{super_co2_21.png}
+\captionof{figure}{Superposition de $CO_2$ prédit et observé 2021}
+\label{fig:super_co2_21}
+\end{center}
+
+La prévision de CO2 de ce modèle(2017-2020) semble prédire pas mal l'année 2021. Mais elle n'est pas bien  superposé sur les données réelles.\\
+\vspace{2em}
+
+\begin{lstlisting}
+tco2_20_21 <- window(tco2, start = c(2020, 1)) 
+
+matrix_1<-cbind(tco2_20_21,pred_co2_20_21$mean) 
+plot(matrix_1, plot.type = "single", lty = c(1,2), col = c("black","red"), xlab = "dates", ylab = "CO2", main = "Superposition de CO2 predit et la serie observee 2020-2021 ", cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], legend = c("CO2 Observe","CO2 predit"),
+       col = c("black","red"), lty = c(1,2),lwd=1, bty = "n")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{super_co2_20_21.png}
+\captionof{figure}{Superposition de CO2 prédit et observé 2020-2021}
+\label{fig:super_co2_20_2}
+\end{center}
+
+On voit ici que la superposition n'est pas bien faite. On peut dire que la prévision n'est pas assez bonne avec ce modèle .\\
+
+
+\begin{lstlisting}
+tco2_19_21 <- window(tco2, start = c(2019, 1)) 
+matrix_11<-cbind(tco2_19_21,pred_co2_19_21$mean) 
+
+plot(matrix_11, plot.type = "single", lty = c(1,2), col = c("black","red"), xlab = "dates", ylab = "CO2",  main = "Superposition de CO2 predit et la serie observee 2019_2021 ",cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], legend = c("CO2 Observe","CO2 predit"),col = c("black","red"), lty = c(1,2),lwd=1, bty = "n")
+
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{super_co2_19_21.png}
+\captionof{figure}{Superposition de CO2 prédit et observé sur 2019-2021}
+\label{fig:super_co2_1_21}
+\end{center}
+
+La prévision de CO2 de ce modèle(2017-2018) semble être moins bon sur 2021 que les deux dernières.\\
+
+\textbf{CH\textsubscript{4}}
+\vspace{2em}
+
+\begin{lstlisting}
+tch4_21 <- window(tch4, start = c(2021, 1)) 
+matrix_4<-cbind(tch4_21,pred_ch4$mean) 
+
+plot(matrix_4, plot.type = "single", lty = c(1,2),col = c("black","red"),xlab = "dates", ylab = "CH4",main = "Superposition de CH4 predit et la serie observee en 2021 ", cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], legend = c("CH4 Observe","CH4 predit"), col = c("black","red"), lty = c(1,2),lwd=1, bty = "n")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{super_ch4_21.png}
+\captionof{figure}{Superposition de CH4 prédit et observé 2021}
+\label{fig:super_ch4_21}
+\end{center}
+
+Voyant ça, la superposition n'est pas bien faite, à cause de grand écart visible entre le trait noir et le rouge.
+
+\vspace{2em}
+
+\begin{lstlisting}
+tch4_20_21 <- window(tch4, start = c(2020, 1)) 
+matrix_2<-cbind(tch4_20_21,pred_ch4_20_21$mean) 
+
+plot(matrix_2, plot.type = "single", lty = c(1,2),col = c("black","red"), xlab = "dates", ylab = "CH4", main = "Superposition de CH4 predit et la serie observee 2020-2021 ", cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], legend = c("CH4 Observe","CH4 predit"),col = c("black","red"), lty = c(1,2),lwd=1, bty = "n")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{super_ch4_2021.png}
+\captionof{figure}{Superposition de CH4 prédit et observé 2020-2021}
+\label{fig:super_ch4_2021}
+\end{center}
+
+Ici aussi, on voit que la superposition n'est pas bien faite. Donc sans les statistiques, on peut dire que la prévision n'est pas bonne avec ce modèle, et cela se fait plus remarqué en 2021 .\par
+
+\vspace{2em}
+
+\begin{lstlisting}
+tch4_19_21 <- window(tch4, start = c(2019, 1)) 
+matrix_12<-cbind(tch4_19_21,pred_ch4_19_21$mean) 
+
+plot(matrix_12,  plot.type = "single", lty = c(1,2), col = c("black","red"), xlab = "dates", ylab = "CH4", main = "Superposition de CH4 predit et la serie observee en 2019_2021 ", cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], legend = c("CH4 Observe","CH4 predit"), col = c("black","red"), lty = c(1,2),lwd=1,bty = "n")
+
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{super_ch4_19_21.png}
+\captionof{figure}{Superposition de CH4 prédit et observé 2019-2021}
+\label{fig:super_ch4_19_21}
+\end{center}
+Il semble que la prévision avec ce modèle a mieux captée l'année 2021 que les autre modèle.\par
+
+\vspace{1em}
+
+Toujours dans le cadre de comparaison, pour être plus précis, on utilise la fonction accuracy(), produisant plusieurs indicateurs :  
+
+RMSE (Racine de l’Erreur Quadratique Moyenne), MAE (Erreur Absolue Moyenne), MAPE (Erreur pourcentage absolue moyenne), et Theil’s U (indiquant la qualité relative de la prévision par rapport à un modèle naïf).\par
+
+Et pour plus de précision, la comparaison se fera uniquement sur les prévisions de 2021 des trois modèles des deux gaz, sur ces deux catégories de régresseurs.\par
+\vspace{2em}
+\textbf{Voyons tout d'abord les résultat sur la première catégorie de régresseurs(composante 1,3 pour $CO_2$ et composante 1,3,4 pour $CH_4$) .}
+
+
+\vspace{1em}
+
+-  Modèle de 2017-2020
+
+\vspace{1em}
+\begin{lstlisting}
+accuracy(tco2_test,pred_co2_sr$mean)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{accu_co2_21.png}
+\captionof{figure}{Erreus de prévision de $CO_2$ sur 2021 avec le modèle 1}
+\label{fig:accu_co2_211}
+\end{center}
+
+\vspace{1em}
+
+\begin{lstlisting}
+accuracy(tch4_test,pred_ch4_sr$mean)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{accu_ch4_21.png}
+\captionof{figure}{Erreus de prévision de $CH_4$ sur 2021 avec le modèle 1}
+\label{fig:accu_ch4_211}
+\end{center}
+ \vspace{1em}
+ 
+ - Modèle de 2017-2019
+ 
+ \vspace{1em}
+\begin{lstlisting}
+tco2_21 <- window(tco2_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_co2_2021 <- window(pred_co2_20_21$mean, start = c(2021, 1), end = c(2021, 365))
+accuracy(tco2_21, pred_co2_2021)
+\end{lstlisting}
+
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{accu_co2_211.png}
+\captionof{figure}{Erreus de prévision de $CO_2$ sur 2021 avec le modèle 2}
+\label{fig:accu_co2_211}
+\end{center}
+\vspace{1em}
+
+ \vspace{1em}
+\begin{lstlisting}
+tch4_2021 <- window(tch4_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_ch4_2021 <- window(pred_ch4_20_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tch4_2021, pred_ch4_2021)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{accu_ch4_211.png}
+\captionof{figure}{Erreus de prévision de $CH_4$ sur 2021 avec le modèle 2}
+\label{fig:accu_ch4_211}
+\end{center}
+ \vspace{1em}
+ 
+ - Modèle de 2017-2018
+
+\vspace{1em}
+\begin{lstlisting}
+tco2_21 <- window(tco2_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_co2_2021 <- window(pred_co2_19_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tco2_21, pred_co2_2021)
+\end{lstlisting}
+
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{accu_co2_11.png}
+\captionof{figure}{Erreus de prévision de $CO_2$ sur 2021 avec le modèle 3}
+\label{fig:accu_co2_2111}
+\end{center}
+\vspace{1em}
+
+ \vspace{1em}
+\begin{lstlisting}
+tch4_21 <- window(tch4_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_ch4_2021 <- window(pred_ch4_19_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tch4_21, pred_ch4_2021)
+
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{accu_ch4_2111.png}
+\captionof{figure}{Erreus de prévision de $CH_4$ sur 2021 avec le modèle 3}
+\label{fig:accu_ch4_2111}
+\end{center}
+ \vspace{1em}
+
+On refait exactement les mêmes choses avec l'autre régresseur(composante 1 à 4), qu'on ne va pas développer ici .
+ 
+Après comparaison des modèles construits sur différentes périodes d’apprentissage et utilisant différents nombres de composantes principales comme régresseurs, nous avons obtenu les résultats suivants :
+
+\texorpdfstring{$CO_2$ sur 2021}
+
+\begin{table}[H]
+\centering
+
+\label{tab:accuracy_co2}
+\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{Période} & \textbf{Axes} & \textbf{ME} & \textbf{RMSE} & \textbf{MAE} & \textbf{MAPE} & \textbf{ACF1} & \textbf{Theil's U} \\
+\hline
+2017--2020 & 1,3 & 0.22 & 1.72 & 1.11 & 94.8 & 0.52 & 0.59 \\
+2017--2020 & 1,2,3,4 & 0.08 & 1.58 & 0.81 & 156.1 & 0.47 & 0.19 \\
+\hline
+2017--2019 & 1,3 & 0.22 & 1.75 & 1.17 & 95.6 & 0.54 & 0.95 \\
+2017--2019 & 1,2,3,4 & -0.0016 & 1.59 & 0.85 & 116.2 & 0.47 & 0.36 \\
+\hline
+2017--2018 & 1,3 & 0.03 & 1.70 & 1.09 & 81.4 & 0.51 & 0.38 \\
+2017--2018 & 1,2,3,4 & -0.32 & 1.63 & 1.05 & 170.1 & 0.46 & 0.38 \\
+\hline
+\end{tabular}
+\caption{Qualité des prévisions de $CO_2$ sur 2021 selon les modèles}
+\end{table}
+
+\begin{itemize}
+    \item Pour la période la plus longue (2017--2020), le modèle avec \textbf{4 axes} (1,2,3,4) obtient de meilleurs scores globaux : plus faible RMSE (1.58), plus faible MAE (0.81) et Theil's U très bas (0.19). Mais le MAPE est plus élevé (156.1) que celui avec seulement 2 axes (94.8).
+    \item Pour 2017--2019, le modèle avec \textbf{4 axes} garde un meilleur RMSE (1.59) et un Theil's U plus bas (0.36), mais au prix d’un MAPE encore un peu élevé (116.2 contre 95.6).
+    \item Pour 2017--2018, les deux modèles sont proches : le modèle avec 4 axes a un RMSE un peu plus faible (1.63 vs 1.70) et MAE légèrement plus bas (1.05 vs 1.09), mais un MAPE plus élevé (170.1 vs 81.4).
+\end{itemize}
+
+Globalement, ajouter les axes 2 et 4 améliore souvent la stabilité (ACF1 plus faible) et réduit RMSE et MAE, mais peut augmenter le MAPE, signe d’erreurs plus importantes sur certaines valeurs extrêmes.  
+
+\textbf{Le modèle construit sur la période 2017–2020 avec comme régresseurs les axes 1,2,3 et 4 de l’ACP est retenu.}
+Il présente en effet de bonnes performances globales (RMSE et MAE les plus faibles et Theil’s U très bas) malgré un MAPE plus élevé, ce qui est tolérable car il s’explique par quelques valeurs extrêmes, tandis que la tendance générale et la qualité de la prévision sont mieux captées.
+
+\vspace{2em}
+\textbf{ Comme sur $CO_2$, on refait les mêmes choses sur $CH_4$ .}
+On ne va pas donner les détails du code, mais Les résultats sont juste conférés dans le tableau suivant :
+
+
+\begin{table}[H]
+\centering
+
+\label{tab:accuracy_ch4}
+\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{Période} & \textbf{Axes} & \textbf{ME} & \textbf{RMSE} & \textbf{MAE} & \textbf{MAPE} & \textbf{ACF1} & \textbf{Theil's U} \\
+\hline
+2017–2020 & 1,3,4 & -0.0025 & 0.0098 & 0.0071 & 91.1 & 0.684 & 0.96 \\
+2017–2020 & 1,2,3,4 & -0.0042 & 0.0108 & 0.0072 & 87.8 & 0.701 & 0.43 \\
+\hline
+2017–2019 & 1,3,4 & -0.0004 & 0.0097 & 0.0075 & 108.9 & 0.678 & 0.40 \\
+2017–2019 & 1,2,3,4 & -0.0041 & 0.0107 & 0.0071 & 73.7 & 0.685 & 1.04 \\
+\hline
+2017–2018 & 1,3,4 & 0.0010 & 0.0102 & 0.0082 & 174.1 & 0.692 & 0.39 \\
+2017–2018 & 1,2,3,4 & -0.0035 & 0.0104 & 0.0069 & 68.8 & 0.665 & 0.53 \\
+\hline
+\end{tabular}
+\caption{Qualité des prévisions de $CH_4$ sur 2021 selon les modèles}
+\end{table}
+
+
+\begin{itemize}
+    \item Sur la période la plus longue (2017–2020), le modèle avec \textbf{4 axes} (1,2,3,4) présente un meilleur Theil's U (0.43) et un MAPE plus faible (87.8) que celui avec seulement 3 axes (0.96).
+    \item Pour 2017–2019, le modèle avec \textbf{3 axes} (1,3,4) est globalement plus stable, avec un Theil's U très bas (0.40), malgré un MAPE plus élevé (108.9).
+    \item Pour 2017–2018, le modèle avec \textbf{4 axes} obtient un MAPE plus bas (68.8 contre 174.1) et un Theil's U légèrement plus élevé (0.53 contre 0.39).
+\end{itemize}
+
+Dans l'ensemble, l'ajout de l'axe 2 semble parfois améliorer la prévision (MAPE plus faible), mais au prix d'une complexité et parfois d'une plus grande instabilité (ACF1 ou Theil's U plus élevés).  \par
+\textbf{Le modèle construit sur la période 2017–2018 utilisant les axes 1,2,3 et 4 comme régresseurs est préféré.}
+Ce modèle obtient un MAPE plus faible et un Theil’s U  bas, traduisant une meilleure précision relative et une meilleure représentation des variations du $CH_4$. 
+
+
+
+
+
+\section{Impact des phénomènes observés sur les flux de CO\textsubscript{2} et CH\textsubscript{4}}
+\vspace{2em}
+
+Notre analyse s’est concentrée sur deux événements majeurs : 
+\begin{itemize}
+    \item la sécheresse de 2019,
+    \item et la période de confinement liée à la COVID-19 en 2020.
+\end{itemize}
+
+En combinant l’observation des séries temporelles et les résultats des prévisions issues de nos modèles, plusieurs constats apparaissent :
+
+\subsection*{Pour le CO\textsubscript{2}}
+\begin{itemize}
+    \item Le modèle construit sur la période 2017–2018 montre que l’année 2019 (caractérisée par une sécheresse) a perturbé la dynamique habituelle du flux de CO\textsubscript{2} sur une longue période. Cela peut s’expliquer par les quatre composantes qui distinguent nettement cette année, comme on l’observe clairement sur leurs tendances. Cette sécheresse a provoqué une augmentation des fluctuations du $CO_2$ (moins de consommation et davantage de libération).
+
+ 
+    \item Le modèle intégrant l’année 2019 prédit mieux le flux de 2021 que le modèle sans 2019. De même, le modèle basé sur la période 2017–2020 prédit mieux 2021 que le modèle 2017–2019, ce qui indique que les confinements ont également affecté la tendance du CO\textsubscript{2}, en lien avec le ralentissement des activités humaines.
+
+\end{itemize}
+
+\subsection*{Pour le CH\textsubscript{4}}
+\begin{itemize}
+\item Les flux de CH\textsubscript{4} apparaissent plus sensibles aux conditions climatiques extrêmes, comme la sécheresse, qui peut limiter l’activité des zones humides responsables des émissions.
+\item Le modèle construit sur 2017–2019 capte moins bien la prévision pour 2021, ce qui confirme l’impact de la sécheresse sur le flux de $CH_4$. Cependant, cet effet semble temporaire, car le modèle 2017-2018 prédit mieux 2021.
+    
+\end{itemize}
+
+\bigskip
+
+\noindent
+\textbf{En résumé :} 
+\begin{itemize}
+    \item La sécheresse de 2019 a surtout amplifié la tendance haussière du flux de CO\textsubscript{2} et perturbé la dynamique naturelle des émissions de CH\textsubscript{4}.
+    \item Les confinements de 2020 ont entraîné une baisse ponctuelle des émissions de CO\textsubscript{2} et CH\textsubscript{4}, avec effet durable sur CO\textsubscript{2} et sans effet durable au-delà de cette année pour CH\textsubscript{4} .
+\end{itemize}
+
+\paragraph{} Après avoir sélectionné les régresseurs et défini la période d'apprentissage la plus pertinente, nous passons maintenant à l'étape de prévision mensuelle des flux de $CO_2$ et de $CH_4$. Cette prévision vise à estimer l'évolution future de ces gaz en tenant compte des principales tendances et effets saisonniers identifiés,ce qui est plus pratique.
+\vspace{2em}
+
+\section{Modélisation des flux de CO\textsubscript{2} et CH\textsubscript{4} sur les données mensuelles}
+\vspace{2em}
+
+Tout d'abord, on finalise la création des données mensuelles, qu'on avait utilisé pour la représentation des month.plot plus haut, et ensuite,on crée celui des composantes principales.
+
+\subsection*{Pour le CO\textsubscript{2}}
+
+\vspace{1em}
+\begin{lstlisting}
+co2_mois <- ts(data_mois$FCO2, start = c(2017, 1), frequency = 12)
+
+plot(co2_mois, main = "Serie temporelle mensuelle de CO2")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{co2_mois.png}
+\captionof{figure}{Chronogramme des données mensuelles de $CO_2$}
+\label{fig:co2_mois}
+\end{center}
+ \vspace{1em}
+A partir de l'année 2019, on observe l'augmentation des flux de CO2 dans les mois d'été, Ce qui montre la croissance de la tendance observée sur la décomposition des données journalières\par
+
+\subsection*{Pour le CH\textsubscript{4}}
+\vspace{1em}
+
+\begin{lstlisting}
+ch4_mois <- ts(data_mois$FCH4, start = c(2017, 1), frequency = 12)
+
+plot(ch4_mois, main = "Serie temporelle mensuelle de CH4")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{ch4_mois.png}
+\captionof{figure}{Chronogramme des données mensuelles de $CH_4$}
+\label{fig:ch4_mois}
+\end{center}
+ \vspace{1em}
+
+ Ici, on observe une décroissance des flux de CH4 en été 2020, et c'est revenu presqu'au normale en 2021, ce qui justifie les analyses et conclusions faites sur le choix du modèle (2017-2018) pour la prévision de CH4 .
+ 
+ \begin{itemize}
+  \item Passons à la création des composantes principales mensuelles 
+\end{itemize}
+
+\begin{lstlisting}
+comp <- data.frame(comp1 = acp$li[,1],comp2 = acp$li[,2],comp3 = acp$li[,3],comp4 = acp$li[,4])
+cp_mois <- aggregate(comp, by = list(AnMois), FUN = mean)
+colnames(cp_mois)[1] <- "AnMois"
+head(cp_mois)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{cp_mois.png}
+\captionof{figure}{Données mensulles des quatres prémières composantes}
+\label{fig:cp_mois}
+\end{center}
+ \vspace{1em}
+
+ \begin{itemize}
+  \item Modélisation 
+\end{itemize}
+\vspace{1em}
+\subsection*{Pour le CO\textsubscript{2}}
+\vspace{1em}
+
+On va tout d'abord définir le régresseur.
+\begin{lstlisting}
+reg_mois <- as.matrix(cp_mois[, c("comp1", "comp2", "comp3", "comp4")])
+\end{lstlisting}
+Ensuite à la création des données d'entrainement et test.
+
+\vspace{1em}
+\begin{lstlisting}
+co2_mois_train <- window(co2_mois, end = c(2020, 12))
+reg_mois_17_20 <- reg_mois[1:length(co2_mois_train), ]
+
+co2_mois_test <- window(co2_mois, start = c(2021, 1))
+reg_mois_21 <- reg_mois[(length(co2_mois_train)+1):length(co2_mois), ]
+\end{lstlisting}
+\vspace{1em}
+
+\begin{lstlisting}
+mod_co2_mois <- auto.arima(co2_mois_train, xreg = reg_mois_17_20)
+summary(mod_co2_mois)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{mod_co2_mois.png}
+\captionof{figure}{Modèle de $CO_2$ sur les données 2017-2020 mensuelles}
+\label{fig:mod_co2_mois}
+\end{center}
+ \vspace{1em}
+
+\begin{itemize}
+    \item Le modèle capture la saisonnalité annuelle grâce à l’AR saisonnier et l’effet dynamique grâce à MA.
+\item Les composantes principales, surtout comp3 et comp1, apportent une bonne partie de l’explication de la tendance et de la variabilité mensuelle.
+\item Le MAPE élevé montre qu’il reste une variabilité difficile à prédire.\\
+Et l'équation du processus retenu par le modèle est :
+
+\begin{equation}
+(1 - 0.3711 B^{12}) y_t 
+= -36.51+9.81 \cdot \text{comp1}_t + 4.53 \cdot \text{comp2}_t 
++ 22.99 \cdot \text{comp3}_t - 4.63 \cdot \text{comp4}_t 
++ (1 + 0.6513 B) \varepsilon_t
+\end{equation}
+Ce qui peut s'ecrire encore sous la forme :
+\begin{equation}
+y_t - 0.3711 y_{t-12} 
+= -36.51+9.81 \cdot \text{comp1}_t + 4.53 \cdot \text{comp2}_t 
++ 22.99 \cdot \text{comp3}_t - 4.63 \cdot \text{comp4}_t 
++ \varepsilon_t + 0.6513 \varepsilon_{t-1}
+\end{equation}
+\end{itemize}
+ \vspace{1em}
+Vérifions la nature des residus avec le test de blancheur.
+\begin{lstlisting}
+Box.test(residuals(mod_co2_mois), lag = 30, type = "Ljung-Box")
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{tblanc_residus_co2_mois.png}
+\captionof{figure}{Test de blancheur}
+\label{fig:tblanc_residus_co2_mois}
+\end{center}
+ \vspace{1em}
+le resultat de ce test nous amène à accepter la blancheur des residus.\par
+Passons maintenant à la prévision .
+\vspace{1em}
+\begin{lstlisting}
+par(mfrow=c(1,2))
+
+pred_co2_mois <- forecast(mod_co2_mois,h=365, xreg = reg_mois_21)
+
+plot(pred_co2_mois, main = "Prevision sur 2021")
+plot(co2_mois,main="la serie originale" )
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{prev_co2_mois.png}
+\captionof{figure}{Prévision mensuelle de $CO_2$ sur 2021 }
+\label{fig:prev_co2_mois}
+\end{center}
+\vspace{1em}
+La prévision sur 2021 suit la dynamique et la tendance  du flux du CO2 observé préalablement avec les données journalières. Certainement, la prévision sur un long horizon donnera la réduction progressive du chronogramme ---> plus de consommation de CO2 par la tourbière en été ---> plus de sa production par les activités humaines.
+
+\vspace{1em}
+\subsection*{Pour le CH\textsubscript{4}}
+\vspace{1em}
+
+Comme retenu sur la série journalière de CH4, on fait un modèle sur l'année 2017-2018 avec les données mensuelles.
+
+\vspace{1em}
+
+\begin{lstlisting}
+ch4_mois_train <- window(ch4_mois, end = c(2018, 12))
+reg_mois_17_18 <- reg_mois[1:length(ch4_mois_train), ]
+
+ch4_mois_test <- window(ch4_mois, start = c(2019, 1))
+reg_mois_19_21 <- reg_mois[(length(ch4_mois_train)+1):length(ch4_mois), ]
+\end{lstlisting}
+\vspace{1em}
+
+\begin{lstlisting}
+mod_ch4_mois <- auto.arima(ch4_mois_train, xreg = reg_mois_17_18)
+summary(mod_ch4_mois)
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{mod_ch4_mois.png}
+\captionof{figure}{Modèle de $CH_4$ sur les données 2017-2020 mensuelles}
+\label{fig:mod_ch4_mois}
+\end{center}
+ \vspace{1em}
+
+\begin{itemize}
+    \item On suppose que tout le signal est capturé par les régresseurs.
+    \item Le coefficient le plus important en valeur absolue est pour la comp3 (0.1779), ce qui montre que cette composante explique la plus grande part de variabilité de CH4.\par
+Le modèle est globalement simple et explique bien la série sans dynamique résiduelle (ACF1 -0.23, pas d’autocorrélation notable). Et aussi les erreurs d'entraînement mesurées sont faible.\par
+
+L'équation de cette trajectoire s'écrit comme suit :\par
+\begin{equation}
+y_t = -0.5409 + 0.0517 \cdot \text{comp1}_t + 0.0892 \cdot \text{comp2}_t + 0.1779 \cdot \text{comp3}_t - 0.1448 \cdot \text{comp4}_t + \varepsilon_t
+\end{equation}
+
+\end{itemize}
+ \vspace{2em}
+
+Vérifions donc si les résidus sont gaussiens avec le test de Shapiro-Wilk, vu que notre modèle ici est une régression. Les hypothèses sont du test sont :
+
+\begin{itemize}
+    \item $H0$ : Les résidus suivent une loi normale.
+    \item $H1$ : Les résidus ne suivent pas une loi normale.
+\end{itemize}
+ \vspace{1em}
+
+\begin{lstlisting}
+shapiro.test(residuals(mod_ch4_mois))
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{tblanc_residus_ch4_mois.png}
+\captionof{figure}{Test de normalité sur $CH_4$}
+\label{fig:tblanc_residus_ch4_mois}
+\end{center}
+ \vspace{1em}
+On valide la normalité des residus, car la p-valeure >0.05. Donc la régression est valide.
+ \vspace{1em}
+On peut maintenant faire la prévision mensuelle de $CH_4$ sur 2019-2021;
+
+\begin{lstlisting}
+par(mfrow=c(1,2))
+
+pred_ch4_mois <- forecast(mod_ch4_mois,h=3, xreg =reg_mois_19_21 )
+
+plot(pred_ch4_mois, main = "Prevision sur 2021")
+plot(ch4_mois,main="la serie originale" ) 
+\end{lstlisting}
+
+\begin{center}
+\centering
+\includegraphics[width=1\textwidth]{prev_ch4_mois.png}
+\captionof{figure}{Prévision mensuelle de $CH_4$ sur 2019-2021}
+\label{fig:prev_ch4_mois}
+\end{center}
+ \vspace{1em}
+
+Ici, la prévision nous montre une augmentation de la quantité de CH4 libérés en 2019,2020, par rapport aux années précédentes, et qui revient presque au rythme de l'année 2017 en 2021 .Donc les phénomènes de 2019 ont un effet temporaires sur le flux de $CH_4$
+Cette prévision mensuelle de $CH_4$ confirme bien les conclusions faites avec la série journalière.\par
+
+   \textbf{En conclusion :}\par
+  Le choix du modèle(2017-2020) comme étant le meilleur pour la prévision de $CO_2$, et du modèle(2017-2018) pour la prévision de $CH_4$ ont bien leurs places a cause des analyses pertinentes faites avant leur choix . Ils ont une bonne prévision sur 2021, mais ayant toujours des imperfections, à cause des données sur une courte période, de l'excès des manquantes et aussi la sensibilité des gaz à effet de serre aux aléas climatiques .
+
+
+
+\clearpage
+\chapter*{Conclusion générale}
+\addcontentsline{toc}{chapter}{Conclusion générale} 
+
+
+Ce projet nous a permis d’explorer la structure des relations entre de nombreuses variables environnementales mesurées sur la tourbière, ainsi que leurs liens avec les flux de gaz à effet de serre ($CO_2$, $CH_4$). 
+Nous avons utilisé les méthodes apprises en cours pour explorer nos données et interpréter les résultats.
+Notre objectif était de mieux comprendre quels facteurs influencent le comportement des GES dans cette tourbière.
+Pour cela, nous avons commencé par traiter  les manquants, qui constituaient  un sérieux handicap à notre analyse (Chapitre 1). Ensuite, nous avons appliqué l'ACP pour comprendre en détails quelles conditions atmosphériques et/ou thermiques influent sur les flux de GES (chapitre 2). Enfin, nous les avons étudiés en tant que série temporelle (dernier chapitre). \newline
+Nos analyses effectuées par l'ACP ont révélé des axes principaux captant des phénomènes thermiques (axe 1), hydrologiques (axe 2) et atmosphériques (axe 3); et leur lien possible avec les flux de GES. Cependant, ces interprétations sont à prendre de manière précautionneuse  à cause de la sensibilité des GES aux différents phénomènes observés. De plus, le fait d'avoir imputé les manquants en utilisant une méthode basée sur l'ACP avant de faire une ACP peut biaiser nos résultats.\newline
+
+En ce qui concerne la partie modélisation, nous avons d’abord modélisé les flux journaliers de $CO_2$ et $CH_4$ en utilisant des modèles ARIMAX intégrant des composantes principales issues de l’ACP comme régresseurs.   Les modèles construits sur différentes périodes (2017–2018, 2017–2019, 2017–2020) ont montré que certains événements extrêmes, comme la sécheresse de 2019 ou les confinements de 2020, avaient un impact notable sur la dynamique des séries, modifiant la tendance et augmentant la variabilité des flux.\\
+Pour affiner l’analyse et lisser les fluctuations de haute fréquence, nous avons ensuite agrégé les données sous forme de séries mensuelles. Les modèles mensuels obtenus ont confirmé l’influence significative des composantes principales (en particulier les axes 1, 2, 3 et parfois 4) sur les flux de gaz à effet de serre.\par  
+Dans l’ensemble, la modélisation a mis en évidence l’importance des conditions climatiques et des phénomènes exceptionnels sur la dynamique des émissions.\par
+
+En résumé, si ce travail nous a permis de dégager des pistes intéressantes sur le comportement des flux de GES, il faut souligner aussi la nécessité de méthodes encore plus rigoureuses et d'une interprétation prudente des résultats.
+
+
+
+\clearpage
+\chapter*{Annexe des données}
+\addcontentsline{toc}{section}{Annexe 1 } 
+
+\clearpage
+\includepdf[pages=-]{Description_des_variables_tourbière}
+
+\clearpage
+\addcontentsline{toc}{section}{Annexe 2} 
+\subsubsection{Annexe 2}
+Voici la liste des variables corrélées à l'axe 1:
+
+\begin{lstlisting}
+ [1] "ETR"                  
+ [2] "LHeat"                
+ [3] "lgt.bm1_PPFD_IN_1_1_1"
+ [4] "lgt.bm1_SWC_1_1_2"    
+ [5] "lgt.bm1_SWC_1_2_1"    
+ [6] "lgt.bm1_SWC_1_3_1"    
+ [7] "TA"                   
+ [8] "lgt.bm1_TS_1_1_1"     
+ [9] "lgt.bm1_TS_1_1_2"     
+[10] "lgt.bm1_TS_1_2_1"     
+[11] "lgt.bm1_TS_1_2_2"     
+[12] "lgt.bm1_TS_1_3_1"     
+[13] "lgt.bm1_TS_1_3_2"     
+[14] "lgt.bm1_TS_1_4_1"     
+[15] "lgt.bm1_TS_1_5_1"     
+[16] "lgt.bm1_WTD"          
+[17] "lgt.sm_exutoire_TW"   
+[18] "lgt.pz_cbdv_amont_TW" 
+[19] "lgt.pz_cbdv_amont_WTD"
+[20] "lgt.pz_cbdv_aval_TW"  
+[21] "lgt.pz_cbdv_aval_WTD" 
+[22] "lgt.pz_dc_TW"         
+[23] "lgt.pz_dc_WTD"        
+[24] "lgt.pz_do_TW"         
+[25] "lgt.pz_do_WTD"        
+[26] "lgt.pz_wc_TW"         
+[27] "lgt.pz_wc_WTD"        
+[28] "lgt.pz_wo_WTD"        
+[29] "lgt.bm2_LW_IN_1_1_1"  
+[30] "lgt.bm2_LW_OUT_1_1_1" 
+[31] "lgt.bm2_SW_IN_1_1_1"  
+[32] "lgt.bm2_SW_OUT_1_1_1" 
+[33] "lgt.bm2_SWC_2_1_2"    
+[34] "lgt.bm2_SWC_2_3_1"    
+[35] "lgt.bm2_TS_2_1_1"     
+[36] "lgt.bm2_TS_2_1_2"     
+[37] "lgt.bm2_TS_2_2_1"     
+[38] "lgt.bm2_TS_2_2_2"     
+[39] "lgt.bm2_TS_2_3_1"     
+[40] "lgt.bm2_TS_2_4_1"     
+[41] "lgt.bm2_TS_2_5_1"     
+[42] "lgt.bm2_TS_2_6_1"     
+[43] "lgt.bm2_WTD"    
+\end{lstlisting}
+
+La liste de celle qui ont une corrélation négalive avec l'axe : 
+
+\begin{lstlisting}
+ [1] "ETR"                  
+ [2] "LHeat"                
+ [3] "lgt.bm1_PPFD_IN_1_1_1"
+ [4] "TA"                   
+ [5] "lgt.bm1_TS_1_1_1"     
+ [6] "lgt.bm1_TS_1_1_2"     
+ [7] "lgt.bm1_TS_1_2_1"     
+ [8] "lgt.bm1_TS_1_2_2"     
+ [9] "lgt.bm1_TS_1_3_1"     
+[10] "lgt.bm1_TS_1_3_2"     
+[11] "lgt.bm1_TS_1_4_1"     
+[12] "lgt.bm1_TS_1_5_1"     
+[13] "lgt.sm_exutoire_TW"   
+[14] "lgt.pz_cbdv_amont_TW" 
+[15] "lgt.pz_cbdv_aval_TW"  
+[16] "lgt.pz_dc_TW"         
+[17] "lgt.pz_do_TW"         
+[18] "lgt.pz_wc_TW"         
+[19] "lgt.bm2_LW_IN_1_1_1"  
+[20] "lgt.bm2_LW_OUT_1_1_1" 
+[21] "lgt.bm2_SW_IN_1_1_1"  
+[22] "lgt.bm2_SW_OUT_1_1_1" 
+[23] "lgt.bm2_TS_2_1_1"     
+[24] "lgt.bm2_TS_2_1_2"     
+[25] "lgt.bm2_TS_2_2_1"     
+[26] "lgt.bm2_TS_2_2_2"     
+[27] "lgt.bm2_TS_2_3_1"     
+[28] "lgt.bm2_TS_2_4_1"     
+[29] "lgt.bm2_TS_2_5_1"     
+[30] "lgt.bm2_TS_2_6_1"
+\end{lstlisting}
+
+La liste de celle qui ont une corrélation positive avec l'axe : 
+\begin{lstlisting}
+ [1] "lgt.bm1_SWC_1_1_2"    
+ [2] "lgt.bm1_SWC_1_2_1"    
+ [3] "lgt.bm1_SWC_1_3_1"    
+ [4] "lgt.bm1_WTD"          
+ [5] "lgt.pz_cbdv_amont_WTD"
+ [6] "lgt.pz_cbdv_aval_WTD" 
+ [7] "lgt.pz_dc_WTD"        
+ [8] "lgt.pz_do_WTD"        
+ [9] "lgt.pz_wc_WTD"        
+[10] "lgt.pz_wo_WTD"        
+[11] "lgt.bm2_SWC_2_1_2"    
+[12] "lgt.bm2_SWC_2_3_1"    
+[13] "lgt.bm2_WTD" 
+\end{lstlisting}
+
+Voici la liste des variables ayant une corrélation négative avec l'axe 2 : 
+\begin{lstlisting}
+[1] "lgt.bm1_SWC_1_1_1"   
+ [2] "lgt.bm1_SWC_1_1_2"   
+ [3] "lgt.bm1_SWC_1_2_1"   
+ [4] "lgt.bm1_SWC_1_3_1"   
+ [5] "lgt.bm1_WTD"         
+ [6] "lgt.pz_cbdv_aval_WTD"
+ [7] "lgt.pz_dc_WTD"       
+ [8] "lgt.pz_do_WTD"       
+ [9] "lgt.pz_wc_WTD"       
+[10] "lgt.pz_wo_WTD"       
+[11] "lgt.bm2_SWC_2_1_1"   
+[12] "lgt.bm2_SWC_2_1_2"   
+[13] "lgt.bm2_SWC_2_2_1"   
+[14] "lgt.bm2_SWC_2_3_1" 
+\end{lstlisting}
+\clearpage
+\chapter*{Bibliographie et documentation}
+
+vidéo youtube: \href{https://www.youtube.com/watch?v=S_y16j8Bqes&t=215s}{Explication des tourbières} \newline
+ \url{https://www.youtube.com/watch?v=S_y16j8Bqes&t=215s}.\newline
+
+article wikipédia : \href{https://fr.wikipedia.org/wiki/Zone_humide}{Article sur les zones humide} \newline 
+ \url{https://fr.wikipedia.org/wiki/Zone_humide}.\newline
+
+article : \href{https://www.junon-cvl.fr/fr/comprendre-jumeaux-numeriques}{Programme junon} \newline 
+ \url{https://www.junon-cvl.fr/fr/comprendre-jumeaux-numeriques}.\newline
+
+article : \href{https://delladata.fr/imputation-donnees-manquantes-missmda/}{explication du package missMDA} \newline
+\url{https://delladata.fr/imputation-donnees-manquantes-missmda/}.\newline
+
+article : \href{https://www.jstatsoft.org/article/view/v070i01}{documentation du package missMDA} \newline
+ \url{https://www.jstatsoft.org/article/view/v070i01}.\newline
+
+article : \href{https://www.lestudium-ias.com/fr/programmes/ambition-research-development-programmes-ard-cvl/programme-junon-ard-cvl1}{site du studium} \newline
+ \url{https://www.lestudium-ias.com/fr/programmes/ambition-research-development-programmes-ard-cvl/programme-junon-ard-cvl}.\newline
+
+article : \href{https://meteofrance.com/actualites-et-dossiers/actualites/climat/une-canicule-aussi-severe-mais-moins-intense-quen-2019}{archive météeo} \newline
+ \url{https://meteofrance.com/actualites-et-dossiers/actualites/climat/une-canicule-aussi-severe-mais-moins-intense-quen-2019}.\newline
+
+Vidéo Youtube : \href{https://www.youtube.com/watch?v=IhBjLeDpOGg}{Vidéo Descriptif de l'ACP} \newline
+ \url{https://www.youtube.com/watch?v=IhBjLeDpOGg}.\newline
+
+Vidéo Youtube : \href{https://www.youtube.com/watch?v=4EeBWYuG5_w}{Vidéo sur la non stationarisation} \newline
+ \url{https://www.youtube.com/watch?v=4EeBWYuG5_w}.\newline
+
+article : \href{https://www.jstatsoft.org/article/view/v070i01}{documentation du package missMDA} \newline
+ \url{https://www.jstatsoft.org/article/view/v070i01}.\newline
+
+article wikipédia : \href{hhttps://fr.wikipedia.org/wiki/Pand\%C3\%A9mie_de_Covid-19_en_France}{} \newline
+ \url{https://fr.wikipedia.org/wiki/Pand%C3%A9mie_de_Covid-19_en_France}.\newline
+
+article wikipédia : \href{https://fr.wikipedia.org/wiki/Tourbi%C3%A8re}{Article sur les tourbières} \newline
+ \url{https://fr.wikipedia.org/wiki/Tourbi%C3%A8re} \newline
+
+\subsubsection{Livres}  
+- Série temporelles avec R, Méthode et cas, Springer de Yves Aragon (2011) \newline
+- Série temporelles avec R, Pratique R, edp Sience de Yves Aragon (2016) \newline
+- Méthode en séries temporelles et applications avec R, Ellipse de Mohamed B \& Manuela R-C, Méthodes (2019) \newline
+- Support de cours de Madame Sophie Jacquot sur les  Séries temporelles \newline
+- Support de cours de Monsieur Didier Chauveau sur la fouille de données \newline
+- Plaidoyer pour les tourbières de Hervé Cubizolle \newline
+- Les tourbières et la tourbe ,Géographie, hydro-écologie, usages et gestion conservatoire de Hervé Cubizolle \newline
+
+\addcontentsline{toc}{section}{Bibliographie}
+
+\clearpage 
+
+
+\end{document}

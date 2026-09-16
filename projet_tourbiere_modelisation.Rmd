@@ -1,0 +1,2556 @@
+---
+title: "Projet tourbière "
+author: "Kokou TETE et Eunice SITTI-MAWUBEDJRO"
+date: "2025-06-24"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,message = FALSE, warning = FALSE)
+
+```
+
+
+### Partie ACP incomplète mais  partie modélisation complète
+ 
+ 
+ 
+ 
+ 
+## 1) 
+
+```{r}
+#install.packages('VIM')
+library(VIM)
+#install.packages(ggplot2)
+library(ggplot2)
+#install.packages('imputeTS')
+library(imputeTS)
+#install.packages('corrplot')
+library(corrplot)
+#install.packages('missMDA')
+library(missMDA)
+#install.packages('dygraphs')
+library(dygraphs)
+#install.packages('xts')
+library(xts)
+library(TSA)
+library(forecast)
+```
+
+
+
+
+
+
+# Chargement du jeux de donnees
+```{r}
+projet_st<-read.table('dataprojet1.txt', header=T)
+#str(projet_st)
+```
+
+
+
+# Visualisation graphique du flux de CO2 et CH4 avec dygraph
+```{r}
+dates<-as.Date(projet_st[,1])
+CO2<-projet_st[,3]
+CH4<-projet_st[,4]
+pro <- xts(cbind(CO2,CH4), order.by = dates)
+
+```
+
+
+
+# Affichage du flux de CO2 
+```{r}
+dygraph(pro[,1]) %>%
+  dySeries("CO2", label = "CO2", color = "blue")%>%
+  dyAxis("y", label = "Valeurs") %>%
+  dyOptions(strokeWidth = 1.5) %>%  # Epaisseur des traits
+  dyLegend(show = "always")%>% 
+  dyRangeSelector()  # Permet de selectionner l'intervalle
+
+```
+
+
+
+# Affichage du flux de CH4 
+```{r}
+dygraph(pro[,2]) %>%
+  dySeries("CH4", label = "CH4", color = "black")%>%
+  dyAxis("y", label = "Valeurs") %>%
+  dyOptions(strokeWidth = 1.5) %>%  # Epaisseur des traits
+  dyLegend(show = "always")%>% 
+  dyRangeSelector()  # Permet de selectionner l'intervalle
+
+```
+
+
+### Etude sur les valeurs manquantes
+
+```{r}
+sum(is.na(projet_st)) # total nber of NA  14885   Au total  val. manquantes
+sort(colSums(is.na(projet_st)))
+```
+### Proportion de na par variable
+
+```{r}
+na_prop <- sort(colMeans(is.na(projet_st)))
+na_prop
+barplot(na_prop, las = 2, col = c(1:60), main = "Proportion de valeurs manquantes par variable", 
+        ylab = "Proportion")
+```
+
+
+lgt.pz_wo_WTD est la variable qui a plus de manquante ~(52%) en suite FCH4
+
+
+### Nombre de composante principales
+
+```{r}
+
+nbdim3 <- estim_ncpPCA(projet_st[,-1])
+nbdim3
+```
+
+
+### imputation par acp
+
+```{r}
+data_1 <- imputePCA(projet_st[,-1], ncp = nbdim3$ncp, method = "Regularized")
+
+```
+
+
+### Verifions la dimension et si ça contient des nas
+```{r}
+dim(data_1$completeObs)
+sum(is.na(data_1$completeObs))
+
+```
+
+
+### Table contenant data sans NAs, et date
+```{r}
+p_df<-data.frame(cbind(projet_st[,1],data_1$completeObs))   # Version dataframe 
+p_st <- xts(p_df, order.by = dates) # Version time serie
+
+```
+
+
+
+### CO2 et CH4 sans les NAs
+```{r}
+co2<-as.numeric(p_df[,3])
+ch4<-as.numeric(p_df[,4])
+
+```
+
+
+# Les valeurs abbérantes(Valeurs extremes dans notre cas)
+
+```{r}
+boxplot(co2,main="FCO2")
+boxplot(ch4,main="FCH4")
+```
+
+Les valeurs abérrantes dans FCO2
+
+```{r}
+ab_co2<-boxplot(co2,plot=F,main="FCO2")$out
+length(ab_co2)
+
+# Trouver les indices de ces valeurs dans le vecteur co2
+ind_ab_co2 <- which(co2 %in% ab_co2)
+
+# Toutes les lignes du tableau de ces valeurs
+p_df[ind_ab_co2,1:4]
+
+```
+
+Les valeurs abérrantes dans FCH4
+
+```{r}
+ab_ch4<-boxplot(ch4,plot=F,main="FCH4")$out
+length(ab_ch4)
+
+# Trouver les indices de ces valeurs dans le vecteur co2
+ind_ab_ch4 <- which(ch4 %in% ab_ch4)
+
+# Toutes les lignes du tableau de ces valeurs
+p_df[ind_ab_ch4,1:4]
+
+```
+
+
+
+
+
+
+```{r}
+ggplot_na_imputations(CO2,as.numeric(co2), xlab="dates", title ="Visualisation de NAs imputees dans CO2" )
+ggplot_na_imputations(CH4,as.numeric(ch4), xlab="dates", title ="Visualisation de NAs imputees dans CH4" ) 
+
+```
+
+Enregistrement du fichier sans NA en Rdata
+
+```{r}
+save(p_df, file = "nona.RData")
+```
+
+
+
+##                       ACP
+
+```{r}
+df<-data.frame(p_df)
+summary(df)
+```
+Rendons les variables numerics
+
+```{r}
+df[] <- lapply(df, function(x) as.numeric(x))
+summary(df)
+```
+
+```{r}
+
+library(ade4)
+
+acp<-dudi.pca(df[,-c(1,3,4)],scal=T,scannf=F,nf=length(df[,-c(1,3,4)]))  ## ACP normee sans date,FCO2 et FCH4
+class(acp)
+names(acp)
+head(acp$li) ## Coordonnees des individus suivant  les axes factoriels
+```
+
+## Pourcentage d'inertie sur les axes principaux avec la commande inertia.dudi
+
+```{r}
+inertie<-inertia.dudi(acp,col.inertia=F,row.inertia = T)  ## Ce sont des valeurs propres
+head(inertie$tot.inertia)
+```
+
+Representation des val.propres
+
+```{r}
+barplot(acp$eig,names.arg=1:length(df[,-c(1,3,4)]))  
+
+```
+Le premier coude se fait voir entre le 4eme et le 5eme axes mais limittons nous sur les 3 1er .
+Et avec ces 3 axes , on capte 78,21% d'inertie
+
+
+## Cercles de correlation
+
+
+```{r}
+
+# la correlation entre les variables 
+
+mcorr<-as.matrix(cor(df[,-1], use = "complete.obs"))  ## Matrice de correlation en ignorant les valeurs manquantes
+corrplot(mcorr,type="upper",tl.cex=0.6, order="hclust",tl.col="black",tl.srt=100 ) 
+
+
+cc<-cor(df[,-c(1,3,4)],acp$li) # Correlation entre les axes factoriels et les variables
+head(cc)
+
+```
+
+
+```{r}
+s.corcircle(cc,xax=1,yax=2,clabel=0.6 , sub ="Cercle 1" )
+title("ACP norme:cercle 1-2 axes")
+
+s.corcircle(cc,xax=1,yax=3,clabel=0.6, sub ="Cercle 2") 
+title("ACP norme:cercle 1-3 axes")
+
+s.corcircle(cc,xax=2,yax=3,clabel=0.6, sub ="Cercle 3") 
+title("ACP norme:cercle 2-3 axes")
+
+```
+ 
+Dans les 3 graphiques, on voit bien un regroupement des variables suivant les differents axes factoriels , surtout sur le cercle 1 et 3
+ 
+
+### La projection des var suppllementaire (FCO2 et FCH4) sur les axes retenus  
+
+```{r}
+
+var_sup <- scale(df[,c(3,4)])  
+cor_sup <- cor(var_sup,acp$li )  # corrélation avec les axes
+head(cor_sup)
+```
+
+
+```{r}
+
+
+# Ajout de FCO2 et FCH4 au cercle de correlation suivant l'axe 1 et 2
+
+s.corcircle(cc,xax=1,yax=2,clabel=0.6 , sub ="Cercle 1" )  # Cercle des corrélations
+
+arrows(0, 0, cor_sup[1,1], cor_sup[1,2], col = "red", length = 0.1)   # 
+text(cor_sup[1,1], cor_sup[1,2], labels = "FCO2", pos = 3, col = "red")
+
+arrows(0, 0, cor_sup[2,1], cor_sup[2,2], col = "blue", length = 0.1)
+text(cor_sup[2,1], cor_sup[2,2], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 1 et 2")
+
+# Ajouter les flèches des variables supplémentaires sur axes 1 et 3
+
+s.corcircle(cc,xax=1,yax=3,clabel=0.5, sub ="Cercle 2")
+
+arrows(0, 0, cor_sup[1,1], cor_sup[1,3], col = "red", length = 0.1)
+text(cor_sup[1,1], cor_sup[1,3], labels = "FCO2", pos = 3, col = "red")
+
+arrows(0, 0, cor_sup[2,1], cor_sup[2,3], col = "blue", length = 0.1)
+text(cor_sup[2,1], cor_sup[2,3], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 1 et 3")
+
+
+# Ajouter les flèches des variables supplémentaires sur axes 2 et 3
+
+s.corcircle(cc,xax=2,yax=3,clabel=0.6, sub ="Cercle 3") 
+
+arrows(0, 0, cor_sup[1,2], cor_sup[1,3], col = "red", length = 0.1)
+text(cor_sup[1,1], cor_sup[1,2], labels = "FCO2", pos = 3, col = "red")
+
+arrows(0, 0, cor_sup[2,2], cor_sup[2,3], col = "blue", length = 0.1)
+text(cor_sup[2,2], cor_sup[2,3], labels = "FCH4", pos = 3, col = "blue")
+title(" FCO2 et FCH4 suivant l'axe 2 et 3")
+```
+ 
+# Sélèctionons les variables correlées aux axes (contributions des variables à la création des composentes principales)
+
+On pouvais se baser uniquement sur les figures pour commenter mais vu qu'on a 3 composante, c'est mieux d'en ajouter les valeurs pour être plus concrète 
+- A l'axe 1 
+
+```{r}
+seuil=0.5
+cor1<-cc[abs(cc[,1])>=seuil,,drop=F]
+nrow(cor1)
+rownames(cor1)
+```
+
+- A l'axe 1 negativement 
+
+```{r}
+cor1N<-cc[cc[,1]<=(-seuil),,drop=F]
+nrow(cor1N)
+rownames(cor1N)
+
+```
+ 
+- A l'axe 1 positivement 
+
+```{r}
+cor1p<-cc[cc[,1]>=(seuil),,drop=F]
+nrow(cor1p)
+rownames(cor1p)
+```
+
+ 
+ - A l'axe 2
+ 
+```{r}
+
+cor2<-cc[abs(cc[,2])>=seuil,,drop=F]
+nrow(cor2)
+rownames(cor2)
+```
+
+
+- A l'axe 2 negativement 
+
+```{r}
+cor2N<-cc[cc[,2]<=(-seuil),,drop=F]
+nrow(cor2N)
+rownames(cor2N)
+
+```
+ 
+- A l'axe 2 positivement 
+
+```{r}
+cor2p<-cc[cc[,2]>=(seuil),,drop=F]
+nrow(cor2p)
+rownames(cor2p)
+
+```
+
+ A l'axe 3 
+ 
+```{r}
+
+cor3<-cc[abs(cc[,3])>=seuil,,drop=F]
+nrow(cor3)
+rownames(cor3)
+
+```
+
+- A l'axe 3 negativement 
+
+```{r}
+cor3N<-cc[cc[,3]<=(-seuil),,drop=F]
+nrow(cor3N)
+rownames(cor3N)
+
+```
+ 
+- A l'axe 3 positivement 
+
+```{r}
+cor3p<-cc[cc[,3]>=(seuil),,drop=F]
+nrow(cor3p)
+rownames(cor3p)
+
+```
+
+### Correlations des FCO2 et CH4 axes suivant les 3 axes 
+
+```{r}
+cor_sup[,1:4]
+```
+### Commentaire
+
+D'après les cercles de correlation et les parties qui précèdent, on a :
+
+- Moyennement  43 variables qui sont correlées avec l'axe1 et repartient comme suit : 30 négativement et 13 positivement . 
+ Et FCO2 aussi est correlée avec l'axe1 donc il y'a dépendance entre FCO2 et ces 43 variables
+ 
+- Moyennement  14 variables qui sont correlées avec l'axe2 et toute négativement .
+ Mais FCO2 et FCH4 sont très faiblement correlées à l'axe2 donc pas de dépendance avec ces 14 variables
+ 
+- Moyennement  12 variables qui sont correlées avec l'axe3 et repartient comme suit : 4 négativement et 8 positivement . 
+ Et FCO2 et FCH4 sont aussi correlées avec l'axe3 donc il y'a dépendance entre FCO2,CH4 et ces 12 variables
+
+
+-43 variables contribuent à l'axe 1 et 30 sont négativement correlées à 13(ie une date qui a les 30 variables avec une grande valeur aura une faible valeur pour les 13 autres variables . VIS-VERSA )
+
+- Pour l'axe 2, 14 variables contribuent à sa formation et sont toutes correlées positivement entre elles
+- Pour l'axe 3, 12 contribuent a sa formation et 4 variables sont correlées négativement à 8 .
+
+
+### Representons le plan factoriel, barycentré sur les mois
+
+
+```{r}
+mois <-format(dates, format = "%m")
+mois1 <- factor(mois, 
+               levels = sprintf("%02d", 1:12),
+               labels = c("Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+                          "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"),
+               ordered = TRUE)
+```
+
+#### Suivant l'axe1 et 2
+
+```{r}
+ #  Représentation graphique : groupé par mois
+s.class(acp$li[,c(1,2)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels suivant l'axe 1 et 2", 
+        csub = 0.5)
+```
+
+D'après le plan, les mois sont repartis suivant l'axe 1 et sont séparés par l'axe 2 selon les saisons(  l'été et l'hivers) .
+
+#### Suivant l'axe1 et 3
+
+```{r}
+ #  Représentation graphique : groupé par mois
+s.class(acp$li[,c(1,3)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels suivant l'axe 1 et 3", 
+        csub = 0.5)
+```
+
+Il semble que l'axe1 est la combinaison des données liées à la temperature a cause du regroupement des mois selon le climat ou temperature, ce qui confirme le plan de l'axe 1 et 2
+
+#### Suivant l'axe1 et 3
+
+```{r}
+ #  Représentation graphique : groupé par mois
+s.class(acp$li[,c(2,3)], fac = mois1, col = rainbow(length(unique(mois))), 
+        sub = "Plan factoriel - Barycentres mensuels suivant l'axe 2 et 3", 
+        csub = 0.5)
+```
+
+Ici ça ne nous donne pas grandes choses 
+
+
+### Representons le plan factoriel, barycentré sur l'année
+
+```{r}
+an <- format(dates, format = "%Y")
+an_fac <- factor(an, ordered = TRUE)
+```
+
+#### Suivant l'axe 1 et 2
+
+```{r}
+s.class(dfxy = acp$li[, c(1,2)], fac = an_fac, col = rainbow(length(unique(an_fac))),sub = "Plan factoriel - Barycentres par année suivant l'axe 1 et 2 ",csub = 1)
+
+```
+
+Dans ce plan factoriel on observe que l'année 2019 est sépararée des autres années et suivant l'axe 2
+
+#### Suivant l'axe 1 et 3
+
+```{r}
+s.class(dfxy = acp$li[, c(1,3)], fac = an_fac, col = rainbow(length(unique(an_fac))),sub = "Plan factoriel - Barycentres par année suivant l'axe 1 et 3 ",csub = 1)
+
+```
+ce plan ne nous donne vraiment pas des informations
+
+#### Suivant l'axe 2 et 3
+
+```{r}
+s.class(dfxy = acp$li[, c(2,3)], fac = an_fac, col = rainbow(length(unique(an_fac))),sub = "Plan factoriel - Barycentres par année suivant l'axe 2 et 3 ",csub = 1)
+```
+
+Dans le plan factoriel on observe que l'année 2019 est sépararée des autres années et suivant l'axe 2 comme celui du 1er plan .
+
+Conclusion: Il semble que cela est due aux canicules pendant l'été 2019 , qui a eu un impact sur les variable contribuant fortement la composante principale 2 ()
+
+
+
+
+
+
+
+
+
+# ###############################################################################################
+
+
+
+
+
+
+## 2) Etude des axes factorils comme série temporelle
+
+
+Pour décomposer les composantes principales ainsi que les séries des gaz à effet de serre en leurs différentes composantes (tendance, saisonnalité et bruit), nous utiliserons la fonction decompose(). Cette fonction calcule notamment la tendance par la méthode des moyennes mobiles, ce qui est particulièrement adapté lorsque les séries sont additives.
+
+##### Pour l'axe factoriel 1
+
+-Tendance et saisonnalité
+
+```{r}
+af_1<-ts(acp$li[,1], start =c(2017,19),frequency = 365 )
+af_11 <- decompose(af_1)
+plot(af_1)
+plot(af_11)
+```
+
+La série issue de la composante principale 1 présente un aspect saisonnier, avec une tendance globalement stable en 2017-2018, décroissante en 2019, puis à nouveau croissante par la suite. On observe un phénomène particulier en 2019, qui semble avoir perturbé la dynamique des variables liées à la température et à la profondeur de la nappe phréatique.
+
+
+##### Pour l'axe factoriel 2
+
+
+```{r}
+af_2<-ts(acp$li[,2], start =c(2017,19),frequency = 365 )
+af_22 <- decompose(af_2)
+plot(af_2)
+plot(af_22)
+```
+ La série observée sur la composante 2 présente des valeurs plus faibles pendant l’été, ce qui correspond aux variables liées à l’hydrologie.
+On observe une hausse de la tendance en 2019, qui commence ensuite à revenir à la normale à partir de 2020.
+Le phénomène observé sur les autres composantes semble également avoir affecté celle-ci, mais son effet paraît plustemporaire.
+
+
+
+##### Pour l'axe factoriel 3
+
+-Téndance et saisonnalité
+
+```{r}
+af_3<-ts(acp$li[,3], start =c(2017,19),frequency = 365 )
+af_33 <- decompose(af_3)
+plot(af_3)
+plot(af_33)
+```
+
+Pendant l’été, les variables liées aux phénomènes atmosphériques (radiation longue onde, vent) et aux phénomènes thermiques directs (chaleur sensible, rayonnement court) présentent, d’après la série observée, un flux plus faible.
+On observe également une chute marquée de la tendance en 2019, ainsi qu’une baisse moins prononcée vers la fin de 2020.
+La composante 2, qui regroupe ces variables, apparaît comme saisonnière, en raison de la dynamique similaire qui se répète chaque année
+
+##### Pour l'axe factoriel 4
+
+-Tendance et saisonnalité
+
+```{r}
+af_4<-ts(acp$li[,4], start =c(2017,19),frequency = 365 )
+af_44 <- decompose(af_4)
+plot(af_4)
+plot(af_44)
+```
+
+L’humidité relative (RH) et les variables liées au flux de chaleur du sol (Soil heat flux) à l’axe 4, présentent globalement une tendance croissante.
+Cette tendance connaît toutefois une chute à partir de 2019, comme observé pour d’autres composantes.
+Par ailleurs, l’aspect saisonnier de cette composante est bien marqué et facilement identifiable.
+
+
+## 3) Etape 1: Etude la tendance et de la saisonnalité et Staionnarité 
+
+
+```{r}
+# CO2 et CH4 en timeserie 
+p_st<-ts(p_st, start =c(2017,19),frequency = 365 )
+tco2<-as.numeric((p_st[,3]))
+tch4<-as.numeric((p_st[,4]))
+
+```
+
+```{r}
+tco2 <- ts(co2, start = c(2017, 19), frequency = 365)
+head(tco2)
+plot(tco2)
+
+dec_co2<- decompose(tco2)
+plot(dec_co2)
+
+```
+
+
+
+Sur la figure 1.11,la tendance connaît plusieurs phases de baisse : une première, plus
+marquée, au début de 2019 ; une seconde, moins prononcée, à la fin de 2019 ; et enfin une
+troisième, encore plus discrète, à la fin de 2020.
+
+```{r}
+tch4 <- ts(tch4, start = c(2017, 19), frequency = 365)
+head(tch4)
+plot(tch4)
+
+dec_ch4 <- decompose(tch4)
+plot(dec_ch4)
+
+
+```
+
+
+On observe que cette tendance commence déjà à diminuer dès 2018, et cette baisse s’accentue
+en 2019. En 2020, la tendance retrouve ensuite sa dynamique normale, orientée à
+la hausse.
+
+###  Etudions la tendance
+
+```{r}
+acf(co2)
+
+```
+Pour CO2, la décroissance des correlations est lente sur la figure 1.12, ce qui confirme
+la présence d’une tendance.
+
+
+
+```{r}
+acf(ch4)
+```
+
+Pour le CH4, la décroissance des corrélations est lente d’après la figure 1.17, ce qui indique
+la présence d’une tendance.
+
+### La saisonnalité 
+
+  
+  Dans head, on a " Frequency = 365 " pour les deux séries, donc ce sont des séries journalières avec une saisonnalité annuelle , ce qui est aussi visible sur le graphique de decomposition
+
+Pour plus de detail, on va transformer notre donnée en donnée mensuelle
+
+###### Agrégation par an et par mois
+
+
+```{r}
+An <- substr(dates, 1, 4)
+Mois <- substr(dates, 6, 7)
+AnMois <- as.numeric(paste(An, Mois, sep = "")) # Concatène l’année et le mois, sans séparateur, puis                                                       convertit en nombre.
+data_mois <- aggregate(df[,-1], by = list(AnMois), FUN = sum) # Agrègeons les colonnes co2 et ch4 par mois, en sommant les valeurs pour chaque
+
+colnames(data_mois)[1] <- "AnMois"
+head(data_mois)
+
+```
+
+#### Examinons maintenant le month plot de CO2 et de CH4
+
+-Pour co2
+
+```{r}
+diox <- ts(data_mois[,3], start = c(2017, 1), frequency = 12) # Serie mensuelle de CO2
+monthplot(diox, ylab = "CO2",main = "Profil saisonnier mensuel de CO2",labels = substr(month.name,1,3))
+```
+Chaque chronogramme represent le flux de CO2 par an.
+S’il n’y avais pas l’aspect saisonnier, Ces 12 chronogrammes se ressembleraient, ce qui
+n’est pas le cas ici et donc il y’a une saisonnalité.
+On remarque qu’il y a moins d’absorption (flux négatif) de CO2 durant les mois de juin,
+juillet et août par rapport aux autres mois. Cela pourrait s’expliquer par l’augmentation
+des températures estivales, qui favorise l’évaporation et entraîne ensuite une diminution
+de la profondeur de la nappe phréatique. Ce sont des facteurs qui sont liées à la variation
+de CO2 d’àprès les études faites sur les composantes principales précédemment.
+-Pour ch4
+```{r}
+diox <- ts(data_mois[,4], start = c(2017, 1), frequency = 12) # Serie mensuelle de CH4
+monthplot(diox, ylab = "CH4",main = "Profil saisonnier mensuel de CH4",labels = substr(month.name,1,3))
+```
+
+S’il n’y avait pas de composante saisonnière, ces 12 chronogrammes se ressembleraient
+fortement, ce qui n’est pas le cas ici : on observe des variations récurrentes au cours de
+l’année, ce qui indique la présence d’une saisonnalité.
+On remarque notamment qu’il y a plus de libération de CH4 durant les mois d’été
+(d’avril à août), ce qui peut s’expliquer par l’augmentation de la température –> cela
+favorise l’activité des micro-organismes méthanogènes responsables de la production de
+CH4.
+De plus, si la nappe phréatique reste élevée durant cette période, les conditions anaérobies
+sont maintenues –> ce qui conduit à une forte émission de CH4 par la tourbière.
+
+
+### La stationarité 
+
+moins de detail car ça se fait automatiquement dans auto.arima()
+
+
+ 
+  Passons au test de Dickey-Fuller pour verifier la stionnarité sous les hypothèses suivantes : 
+ 
+     H0 : il y a une racine unitaire (donc série non stationnaire)
+     H1 : la série est stationnaire
+
+```{r}
+library(tseries)
+adf.test(tco2)
+```
+
+la p-value est inférieure à 0.05 donc on rejette H0, et on peut dire que la série de CO2 n'a pas de racine unitaire, mais on ne peut conclure la stationnarité, car il y'a presence d'une tendance.
+Et sur le monthplot,par exemple pour le mois de janvier, on observe une fluctuation(une variation du flux de CO2 de chaque année ), donc la covariance va dépendre du temps .
+Cette contradition peut ètre due à la faiblesse de la variance de la tendance .
+
+```{r}
+adf.test(tch4)
+```
+la p-value est inférieure à 0.05 donc on rejette H0, et on peut dire que la série de CH4 n'a pas de racine unitaire, mais on ne peut conclure la stationnarité, car il y'a presence d'une tendance.
+Et sur le monthplot,par exemple pour le mois de janvier, on observe une fluctuation(une variation du flux de CH4 de chaque année ), donc la covariance va dépendre du temps .
+Cette contradition peut ètre due à la faiblesse de la variance de la tendance .
+
+
+
+
+## Etape 2 : Stationnarisation
+
+Detail du cours et moins de details car ça se fait automatiquement dans auto.arima 
+
+
+
+
+
+
+
+
+
+## Etape 3 : Détermination du modèle correspondant au processus de CO2 et CH4 en ajoutant les composantes principales aux quelles ils sont bien correlés comme regrèsseur
+
+
+
+Identification du modèle(p,q),Estimation des polynômes P,Q (Confert auto.arima)
+
+
+
+
+
+## Modèle 1 : Se basant sut tout la série en considérant les phénomènes de 2018,2019...
+
+
+#### Les données d'entrainement et test
+
+Scindons CO2 et CH4 en 2 données : Données d'entrainement et données test
+
+
+- Definissons d'abord les regresseurs
+
+```{r}
+rg1<-as.matrix(acp$li[,c(1,3)]) # axe 1,3 comme un regresseur de CO2
+rg2<-as.matrix(acp$li[,c(1,3,4)]) # axe 1,3,4 comme un regresseur de CH4 mais CH4 n'est que pas bien correlé avec les axes 1 et 4
+
+tco2 <- as.numeric(tco2)
+tco2 <- ts(tco2, frequency = 365, start = c(2017, 19))  # la série commence le 19 Janv 2025
+
+tch4 <- as.numeric(tch4)
+tch4 <- ts(tch4, frequency = 365, start = c(2017, 19))  
+```
+
+#### Train data
+
+
+```{r}
+# Pour CO2
+
+tco2_train <- window(tco2, end = c(2020, 365))  # co2 train ,données jusqu'a fin 2020
+reg1_train<-rg1[1:length(tco2_train),] # regresseur train, données jusqu'a fin 2020
+
+# Pour CH4
+
+tch4_train <- window(tch4, end = c(2020, 365)) # co2 train ,données jusqu'a fin 2020
+reg2_train<-rg2[1:length(tch4_train),] # regresseur train, données jusqu'a fin 2020
+
+```
+
+#### Test data
+
+```{r}
+# Pour CO2
+tco2_test <- window(tco2, start = c(2021, 1))  # co2 test ,données à partrir de debut 2021
+reg1_test <- rg1[(length(tco2_train)+1):(length(tco2_train)+length(tco2_test)), ] ## regresseur test, données à partrir de debut 2021
+
+# Pour CH4
+tch4_test <- window(tch4, start = c(2021, 1))  # ch4 test ,données à partrir de debut 2021
+reg2_test <- rg2[(length(tch4_train)+1):(length(tch4_train)+length(tch4_test)), ]# regresseur test, données à partrir de debut 2021
+```
+
+
+#### Entrainement en déterminant un modèle(permettant de faire des previsions avec des phénomenes observés)
+
+```{r}
+
+# pour CO2
+mod_co22 <- auto.arima(tco2_train, xreg = reg1_train )   
+summary(mod_co22)
+```
+
+Le modèle nous fait savoir que la série de CO2 avec régrèsseurs est différenciée pur être staionnaire .cette non-staionnarité est liée certainement aux régresseurs 
+
+
+
+
+```{r}
+# pour CH4
+mod_ch44 <- auto.arima(tch4_train, xreg = reg2_train )   
+summary(mod_ch44)
+```
+ La série de CH4 régressée est toujours stationnaire
+ 
+
+#### Analyse des résidus pour valider le modèle
+
+
+```{r}
+# Pour CO2
+tsdisplay(residuals(mod_co22), main ="Résidus du modèle ARIMAX saisonnière de CO2 sur la période d'essaie(debut 2017-fin 2020)") 
+```
+
+Les autocorrelations ne nous permettent pas d'affirmer clairement que les résidus du modèlé de CO2 sont du bruit blanc à cause du faite que certains sont légèrement sortie de la bande .
+
+```{r}
+# Pour CH4
+tsdisplay(residuals(mod_ch44), main ="Résidus du modèle ARIMAX saisonnière de CH4 sur la période d'essaie(debut 2017-fin 2020)")
+```
+
+Les autocorrelations ne nous permettent pas d'affirmer clairement que les résidus du modèlé de CH4 sont du bruit blanc à cause du faite que certains sont légèrement sortie de la bande .
+
+#### Test de blancheur
+
+Faisons un test pour vérifier si les résidus sont du bruit blanc ou pas sous les hypothèses 
+```
+   H0 :"les résidus ne sont pas autocorrélés (→ c’est du bruit blanc)" contre 
+   H1 :"(alternative) : les résidus sont autocorrélés (→ modèle mal ajusté") au niveau de risque 5%
+```
+
+```{r}
+# Pour CO2
+Box.test(residuals(mod_co22), lag = 30, type = "Ljung-Box")
+
+```
+
+En ce qui concerne le test de blancheur, la p-valeur est supérieure à alpha(0.05), donc on ne rejette pas HO (les résidus  sont du bruit blancs) et donc on peut affirmer que résidus du modèle de CO2 sont du bruit blanc
+
+```{r}
+# Pour CH4
+Box.test(residuals(mod_ch44), lag = 30, type = "Ljung-Box")
+
+```
+
+En ce qui concerne le test de blancheur, la p-valeur est supérieure à alpha(0.05), donc on ne rejette pas HO (les résidus  sont du bruit blancs) et donc on peut affirmer que résidus du modèle de CH4 sont du bruit blanc
+
+#### Prévision
+
+```{r}
+library(forecast)
+```
+
+```{r}
+# Prédire CO2 sur 2021
+
+par(mfrow=c(1,2))
+
+pred_co2 <- forecast(mod_co22, h = 365, xreg = reg1_test) # h=365 tout l'année de 2021
+plot(pred_co2, main = "Prévision de CO2 pour 2021")
+plot(tco2,main="la série originale" )
+
+```
+
+
+```{r}
+# Prédire CH4 pour 2021
+
+par(mfrow=c(1,2))
+
+pred_ch4 <- forecast(mod_ch44, h = 365, xreg = reg2_test) # h=365 tout l'année de 2021
+plot(pred_ch4, main = "Prévision de CH4 pour 2021")
+plot(tch4,main="la série originale" )
+
+```
+Ces deux nous permettrons de faire une prédiction sur un long horizon en considérant les phénomènes caniculaires et de covid
+
+
+#### Verifions numériquement si les modèles obtenus sont de bons modèles
+
+##### Pour CO2
+
+```{r}
+mean(tco2); sd(tco2) 
+accuracy(mod_co22)[, "RMSE"] # racine de l'erreur quadratique moyenne
+```
+
+```{r}
+accuracy(mod_co22)[, "RMSE"] /sd(tco2)
+accuracy(mod_co22)[, "RMSE"] /abs(mean(tco2))
+```
+
+RMSE<Ecart-type : le modèle obtenue pour CO2 explique une part significative de la variabilité 
+Mais RMSE est sensiblement superieure à la moyenne,ce qui indique que le modèle est correct, mais pas très précis.
+
+
+##### Pour CH4 
+
+```{r}
+mean(tch4); sd(tch4) 
+accuracy(mod_ch44)[, "RMSE"] # racine de l'erreur quadratique moyenne
+```
+
+```{r}
+accuracy(mod_ch44)[, "RMSE"] /sd(tch4)
+accuracy(mod_ch44)[, "RMSE"] /abs(mean(tch4))
+```
+RMSE est inférieure à la moyenne et aussi inférieure à l'écart-type , donc le modèle obteu pour CH4 explique une bonne part de variabilité .
+
+
+##### Analyse de la prévision sur 2021
+
+-Pour CO2
+
+```{r}
+accuracy(tco2_test,pred_co2$mean)
+```
+MAPE est elevée donc les données surestimées et souestimées sont nombreuses , ce qui montre que la prédiction n'est aussi bonne que ça, mais c'est mieux qu'un modèle naif(répétition de la dernière sur le futur) a cause de (Theil's U <1)
+
+-Pour CH4
+
+```{r}
+accuracy(tch4_test,pred_ch4$mean)
+```
+
+MAPE est elevée donc les données surestimées et sous-estimées sont nombreuses , ce qui montre que la prédiction n'est aussi bonne que ça, mais c'est très mieux qu'un modèle naif(répétition de la dernière sur le futur) a cause de (Theil's U <1)
+
+
+
+
+
+### Modèle 2 : Se basant uniquement sur les années avant l'année de covid(2020) 
+
+
+- Sur CO2 jusqu'à fin 2019
+
+
+```{r}
+# Creation de données
+tco2_17_19 <- window(tco2, end = c(2019, 365))  # co2 train ,données jusqu'a fin 2018
+reg_17_19<-rg1[1:length(tco2_17_19),] # regresseur train, données jusqu'a fin 2018
+
+tco2_20_21 <- window(tco2, start = c(2020, 1))  # co2 test ,données à partrir de debut 2019
+reg_20_21 <- rg1[(length(tco2_17_19) + 1):(length(tco2_17_19) + length(tco2_20_21)), ]# regresseur test, données à partrir de debut 2019
+```
+
+
+
+```{r}
+#Determination du modèle
+mod_co2_17_19 <- auto.arima(tco2_17_19, xreg = reg_17_19 )   
+summary(mod_co2_17_19)
+```
+
+- Sur CH4 jusqu'à fin 2019
+
+```{r}
+# Creation de données
+tch4_17_19 <- window(tch4, end = c(2019,365 )) # co2 train ,données jusqu'a fin 2020
+r_17_19<-rg2[1:length(tch4_17_19),] # regresseur train, données jusqu'a fin 2020
+
+tch4_20_21 <- window(tch4, start = c(2020, 1))  # co2 test ,données à partrir de debut 2018
+r_20_21 <- rg2[(length(tch4_17_19) + 1):(length(tch4_17_19) + length(tch4_20_21)), ]# regresseur test, données à partrir de debut 2018
+```
+
+
+```{r}
+# pour CH4
+mod_ch4_17_19 <- auto.arima(tch4_17_19, xreg = r_17_19 )   
+summary(mod_ch4_17_19)
+```
+
+
+
+
+##### Test de blancheurs sur les residus des modèles avant 2020 retenus
+
+-Pour CO2
+```{r}
+
+Box.test(residuals(mod_co2_17_19), lag = 30, type = "Ljung-Box")
+
+```
+En ce qui concerne le test de blancheur, la p-valeur est supérieure à alpha(0.05), donc on ne rejette pas HO (les résidus  sont du bruit blancs) et donc on peut affirmer que résidus du modèle de CO2 sont du bruit blanc
+
+-Pour CH4
+```{r}
+
+Box.test(residuals(mod_ch4_17_19), lag = 30, type = "Ljung-Box")
+
+```
+##### Faisons une prevision sur 2020-2021 
+
+
+-Pour CO2
+
+```{r}
+# Prédire CO2 sur 2020-2021
+
+par(mfrow=c(1,2))
+
+pred_co2_20_21 <- forecast(mod_co2_17_19, h = 365*2, xreg =reg_20_21  ) # h=365*4 tout l'année 2019-2021
+
+plot(pred_co2_20_21, main = "Prévision de CO2 pour 2020-2021")
+plot(tco2,main="la série originale" )
+
+```
+
+
+- Pour CH4
+
+```{r}
+# Prédire CH4 sur 2018-2021
+
+par(mfrow=c(1,2))
+
+pred_ch4_20_21 <- forecast(mod_ch4_17_19, h = 365*2, xreg =r_20_21  ) # toute l'année 2020-2021
+
+plot(pred_ch4_20_21, main = "Prévision de CH4 pour 2020-2021")
+plot(tch4,main="la série originale" ) 
+
+```
+
+
+
+Visuellement , on vois que les prévision sont bonne a cause de la dynamique et les saisonnalité qui sont concerver
+
+
+#### Analysons la qualité de prédiction
+
+```{r}
+accuracy(tco2_20_21,pred_co2_20_21$mean)
+```
+
+L'Erreur Moyenne Absolue en Pourcentage (MAPE) est élévée, ce qui montre qu'on a plus d'erreur que de bonne valeur dans la prediction   
+
+(Plus de detail sur MAPE a faire dans le rapport)
+
+
+```{r}
+accuracy(tch4_20_21,pred_ch4_20_21$mean)
+```
+L'Erreur Moyenne Absolue en Pourcentage (MAPE) est un peu élévée, ce qui montre qu'on a un peu d'erreur que de bonne valeur dans la prédiction. Les autres indicateurs montrent que le modèle est bon, mais aussi perfectible. 
+
+
+##### Comparaison des prévisions des deux modèles précédents sur 2021
+
+-CO2
+
+```{r}
+
+# Extraire les donnees de 2021 uniquement
+tco2_2021 <- window(tco2_20_21, start = c(2021, 1), end = c(2021, 365))
+pred_co2_2021 <- window(pred_co2_20_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tco2_2021, pred_co2_2021)
+
+```
+
+-CH4
+
+```{r}
+tch4_2021 <- window(tch4_20_21, start = c(2021, 1), end = c(2021, 365))
+pred_ch4_2021 <- window(pred_ch4_20_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tch4_2021, pred_ch4_2021)
+
+```
+
+
+
+#### Modèle 3 : Sans regresseurs
+
+-Training set
+
+```{r}
+# Pour CO2
+tco2_train <- window(tco2, end = c(2020, 365))  # co2 train ,données jusqu'a fin 2020
+
+
+# Pour CH4
+tch4_train <- window(tch4, end = c(2020, 365)) # co2 train ,données jusqu'a fin 2020
+
+```
+
+-Test set
+
+```{r}
+# Pour CO2
+tco2_test <- window(tco2, start = c(2021, 1))  # co2 test ,données à partrir de debut 2021
+
+# Pour CH4
+tch4_test <- window(tch4, start = c(2021, 1))  # ch4 test ,données à partrir de debut 2021
+
+```
+
+-Modelisation
+
+```{r}
+# pour CO2
+mod_co2_sr <- auto.arima(tco2_train )   
+summary(mod_co2_sr)
+```
+Le modèle de CO2 sans regresseur est stationnaire. Mais on remarque que les critères, et
+l’erreur moyenne en poucentage (MAPE) sont très élevées, donc ce modèle ne capte pas
+la dynamique du flux de CO2
+
+```{r}
+# pour CH4
+mod_ch4_sr <- auto.arima(tch4_train )   
+summary(mod_ch4_sr)
+```
+Le modèle de CH4 sans regresseur est aussi stationnaire.On remarque que les critères et
+l’erreur moyenne en poucentage (MAPE) sont de faibles valeurs, donc ce modèle semble
+bien capté la dynamique du flux de CH4
+-Prevision sur 2021
+
+```{r}
+# Prédire CO2 sur 2021
+
+par(mfrow=c(1,2))
+
+pred_co2_sr <- forecast(mod_co2_sr, h = 365) # h=365 toute l'année de 2021
+plot(pred_co2_sr, main = "Prévision de CO2 pour 2021")
+plot(tco2,main="la série originale" )
+
+```
+
+
+```{r}
+# Prédire CH4 pour 2021
+
+par(mfrow=c(1,2))
+
+pred_ch4_sr <- forecast(mod_ch4_sr, h = 365, xreg = reg2_test) # h=365 tout l'année de 2021
+plot(pred_ch4_sr, main = "Prévision de CH4 pour 2021")
+plot(tch4,main="la série originale" )
+
+```
+
+# Analysons la qualité de prediction sur 2021, du modèle sans regresseur
+
+-Pour CO2
+
+```{r}
+accuracy(tco2_test,pred_co2_sr$mean)
+```
+
+-Pour CH4
+
+```{r}
+accuracy(tch4_test,pred_ch4_sr$mean)
+```
+
+Ici, les Theil's U des previsions de CO2 et CH2 sont très élevées par rapport aux modèle avec regresseurs, donc les modèles avec regresseurs sont mieux .
+
+
+
+
+
+#### Superposition des données prédites sur les observées des deux premières modèles
+
+###### Prévision sur 2020-2021
+
+- Pour CO2
+
+```{r}
+tco2_20_21 <- window(tco2, start = c(2020, 1)) 
+matrix_1<-cbind(tco2_20_21,pred_co2_20_21$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_1, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CO2", 
+     main = "Superposition de CO2 prédit et la série observée 2020-2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CO2 Observé","CO2 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+```
+
+On voit ici que la superposistion n'est pas bien faite.Donc sans les chiffres, on peut dire que la prévision n'est pas bonne avec ce modèle .
+
+-Pour CH4
+```{r}
+tch4_20_21 <- window(tch4, start = c(2020, 1)) 
+matrix_2<-cbind(tch4_20_21,pred_ch4_20_21$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_2, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CH4", 
+     main = "Superposition de CH4 prédit et la série observée 2020-2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CH4 Observé","CH4 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+
+Ici aussi, on voit que la superposistion n'est pas bien faite.Donc sans les chiffres, on peut dire que la prévision n'est pas bonne avec ce modèle et ça ce fait plus remarqué en 2021 .
+
+###### Prévision sur 2021
+
+
+- Pour CO2
+
+```{r}
+tco2_21 <- window(tco2, start = c(2021, 1)) 
+matrix_3<-cbind(tco2_21,pred_co2$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_3, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CO2", 
+     main = "Superposition de CO2 prédit et la série observée 2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CO2 Observé","CO2 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+La prévision de CO2 de ce modèle(2017-2020) semble être mieux sur 2021 que celle du modèle(2017-2019). Mais n'est pas bien superposé
+
+-Pour CH4
+```{r}
+tch4_21 <- window(tch4, start = c(2021, 1)) 
+matrix_4<-cbind(tch4_21,pred_ch4$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_4, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CH4", 
+     main = "Superposition de CH4 predit et la serie observee en 2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CH4 Observé","CH4 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+
+Voyant ça,on remarque que la superposition n'est toujours pas bien faite, et il semble que ce modèle est pire que celui conçu sur 2017-2019
+
+
+
+
+
+### Modèle 4 : Se basant uniquement sur les années avant l'année de secheresse(2019)
+
+-CO2
+
+
+```{r}
+# Creation de données
+tco2_17_18 <- window(tco2, end = c(2018, 365))  # co2 train ,données jusqu'a fin 2018
+reg1_17_18<-rg1[1:length(tco2_17_18),] # regresseur train, données jusqu'a fin 2018
+
+tco2_19_21 <- window(tco2, start = c(2019, 1))  # co2 test ,données à partrir de debut 2019
+reg1_19_21 <- rg1[(length(tco2_17_18) + 1):(length(tco2_17_18) + length(tco2_19_21)), ]# regresseur test, données à partrir de debut 2019
+```
+
+
+
+```{r}
+#Determination du modèle
+mod_co2_17_18 <- auto.arima(tco2_17_18, xreg = reg1_17_18 )   
+summary(mod_co2_17_18)
+```
+Test de blancheur des residus
+```{r}
+Box.test(residuals(mod_co2_17_18), lag = 30, type = "Ljung-Box")
+```
+On ne rejete donc pas la non blancheur des residus.
+
+-CH4
+
+```{r}
+# Creation de données
+tch4_17_18 <- window(tch4, end = c(2018,365 )) # co2 train 
+reg2_17_18<-rg2[1:length(tch4_17_18),] # regresseur train, 
+
+tch4_19_21 <- window(tch4, start = c(2019, 1))  # co2 test ,données à partrir de debut 2018
+reg2_19_21 <- rg2[(length(tch4_17_18) + 1):(length(tch4_17_18) + length(tch4_19_21)), ]# regresseur test, données à partrir de debut 2018
+```
+
+
+```{r}
+# pour CH4
+mod_ch4_17_18 <- auto.arima(tch4_17_18, xreg = reg2_17_18 )   
+summary(mod_ch4_17_18)
+```
+Test de blancheur de residus
+
+```{r}
+Box.test(residuals(mod_ch4_17_18), lag = 30, type = "Ljung-Box")
+```
+Ici aussi,On ne rejete donc pas la non blancheur des residus. 
+
+
+####### Prevision
+-CO2
+
+```{r}
+# Prédire CO2 sur 2019-2021
+
+par(mfrow=c(1,2))
+
+pred_co2_19_21 <- forecast(mod_co2_17_18, h = 365*3, xreg =reg1_19_21  ) # h=365*4 tout l'année 2019-2021
+
+plot(pred_co2_19_21, main = "Prévision de CO2 pour 2019-2021")
+plot(tco2,main="la série originale" )
+
+```
+
+-CH4
+
+```{r}
+# Prédire CH4 sur 2019-2021
+
+par(mfrow=c(1,2))
+
+pred_ch4_19_21 <- forecast(mod_ch4_17_18, h = 365*3, xreg =reg2_19_21  ) # h=365*4 tout l'année 2019-2021
+
+plot(pred_ch4_19_21, main = "Prévision de CH4 pour 2019-2021")
+plot(tch4,main="la série originale" )
+
+```
+
+##### Qualité de prevision
+
+```{r}
+accuracy(tco2_19_21,pred_co2_19_21$mean)
+```
+
+
+```{r}
+accuracy(tch4_19_21,pred_ch4_19_21$mean)
+```
+
+
+#### Superposition des données prédites sur les observées de tout les modèles sauf sans regresseur
+
+###### Prévision sur 2019-2021
+
+- Pour CO2
+
+```{r}
+tco2_19_21 <- window(tco2, start = c(2019, 1)) 
+matrix_7<-cbind(tco2_19_21,pred_co2_19_21$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_7, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CO2", 
+     main = "Superposition de CO2 prédit et la série observée 2019-2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CO2 Observé","CO2 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+```
+
+-Pour CH4
+```{r}
+tch4_20_21 <- window(tch4, start = c(2019, 1)) 
+matrix_8<-cbind(tch4_19_21,pred_ch4_19_21$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_8, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CH4", 
+     main = "Superposition de CH4 prédit et la série observée 2019-2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CH4 Observé","CH4 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+
+
+
+###### Prévision sur 2021
+
+
+- Pour CO2
+
+```{r}
+tco2_21 <- window(tco2, start = c(2021, 1)) 
+matrix_9<-cbind(tco2_21,pred_co2$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_9, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CO2", 
+     main = "Superposition de CO2 prédit et la série observée 2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CO2 Observé","CO2 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+
+
+
+-Pour CH4
+```{r}
+tch4_21 <- window(tch4, start = c(2021, 1)) 
+matrix_10<-cbind(tch4_21,pred_ch4$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_10, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CH4", 
+     main = "Superposition de CH4 predit et la serie observee en 2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CH4 Observé","CH4 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+
+###### Prévision sur 2019-2021
+
+
+- Pour CO2
+
+```{r}
+tco2_19_21 <- window(tco2, start = c(2019, 1)) 
+matrix_11<-cbind(tco2_19_21,pred_co2_19_21$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_11, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CO2", 
+     main = "Superposition de CO2 prédit et la série observée 2019_2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CO2 Observé","CO2 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+Avec ce modèle, la prévision semble mieux capter la fluctuation de CO2, surtout en 2021, que les précédantes 
+
+-Pour CH4
+```{r}
+tch4_19_21 <- window(tch4, start = c(2019, 1)) 
+matrix_12<-cbind(tch4_19_21,pred_ch4_19_21$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_12, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CH4", 
+     main = "Superposition de CH4 prédit et la serie observée en 2019_2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CH4 Observé","CH4 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+
+Pour ce modèle, sa prévision semble mieux capter le flux de CH4 que les derniers.
+
+
+##### Voyons maintenant la qualité sur de prevision des 3 modèles sur 2021
+
+######### Pour le modèle de 2017-2020
+
+-Pour CO2
+
+```{r}
+accuracy(tco2_test,pred_co2$mean)
+```
+
+-Pour CH4
+
+```{r}
+accuracy(tch4_test,pred_ch4$mean)
+```
+
+
+######### Pour le modèle de 2017-2019
+-CO2
+```{r}
+
+# Extraire les donnees de 2021 uniquement
+tco2_21 <- window(tco2_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_co2_2021 <- window(pred_co2_20_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tco2_21, pred_co2_2021)
+
+```
+
+-CH4
+
+```{r}
+tch4_2021 <- window(tch4_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_ch4_2021 <- window(pred_ch4_20_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tch4_2021, pred_ch4_2021)
+
+```
+
+######### Pour le modèle de 2017-2018
+
+-CO2
+
+```{r}
+
+# Extraire les donnees de 2021 uniquement
+tco2_21 <- window(tco2_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_co2_2021 <- window(pred_co2_19_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tco2_21, pred_co2_2021)
+
+```
+
+-CH4
+
+```{r}
+tch4_21 <- window(tch4_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_ch4_2021 <- window(pred_ch4_19_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tch4_21, pred_ch4_2021)
+
+```
+
+
+
+
+
+
+
+# ################################################################################################
+
+
+
+
+#  Détermination du modèle correspondant au processus de CO2 et CH4 en ajoutant les quatres composantes principales comme regrèsseur
+
+
+## Modèle 1 : Se basant sut tout la série en considérant les phénomènes de 2018,2019...
+
+
+#### Les données d'entrainement et test
+
+Scindons CO2 et CH4 en 2 données : Données d'entrainement et données test
+
+
+- Definissons d'abord les regresseurs
+
+```{r}
+rg1<-as.matrix(acp$li[,c(1,2,3,4)]) # axe 1,2,3 comme un regresseur de CO2
+rg2<-as.matrix(acp$li[,c(1,2,3,4)]) # axe 1,2,3 comme un regresseur de CH4 
+
+tco2 <- as.numeric(tco2)
+tco2 <- ts(tco2, frequency = 365, start = c(2017, 19))  # la série commence le 19 Janv 2025
+
+tch4 <- as.numeric(tch4)
+tch4 <- ts(tch4, frequency = 365, start = c(2017, 19))  
+```
+
+#### Train data
+
+
+```{r}
+# Pour CO2
+
+tco2_train <- window(tco2, end = c(2020, 365))  # co2 train ,données jusqu'a fin 2020
+reg1_train<-rg1[1:length(tco2_train),] # regresseur train, données jusqu'a fin 2020
+
+# Pour CH4
+
+tch4_train <- window(tch4, end = c(2020, 365)) # co2 train ,données jusqu'a fin 2020
+reg2_train<-rg2[1:length(tch4_train),] # regresseur train, données jusqu'a fin 2020
+
+```
+
+#### Test data
+
+```{r}
+# Pour CO2
+tco2_test <- window(tco2, start = c(2021, 1))  # co2 test ,données à partrir de debut 2021
+reg1_test <- rg1[(length(tco2_train)+1):(length(tco2_train)+length(tco2_test)), ] ## regresseur test, données à partrir de debut 2021
+
+# Pour CH4
+tch4_test <- window(tch4, start = c(2021, 1))  # ch4 test ,données à partrir de debut 2021
+reg2_test <- rg2[(length(tch4_train)+1):(length(tch4_train)+length(tch4_test)), ]# regresseur test, données à partrir de debut 2021
+```
+
+
+#### Entrainement en déterminant un modèle(permettant de faire des previsions avec des phénomenes observés)
+
+```{r}
+
+# pour CO2
+mod_co22 <- auto.arima(tco2_train, xreg = reg1_train )   
+summary(mod_co22)
+```
+
+Le modèle nous fait savoir que la série de CO2 avec régrèsseurs est différenciée pur être staionnaire .cette non-staionnarité est liée certainement aux régresseurs 
+
+
+
+
+```{r}
+# pour CH4
+mod_ch44 <- auto.arima(tch4_train, xreg = reg2_train )   
+summary(mod_ch44)
+```
+ La série de CH4 régressée est toujours stationnaire
+ 
+
+#### Analyse des résidus pour valider le modèle
+
+
+```{r}
+# Pour CO2
+tsdisplay(residuals(mod_co22), main ="Résidus du modèle ARIMAX saisonnière de CO2 sur la période d'essaie(debut 2017-fin 2020)") 
+```
+
+Les autocorrelations ne nous permettent pas d'affirmer clairement que les résidus du modèlé de CO2 sont du bruit blanc à cause du faite que certains sont légèrement sortie de la bande .
+
+```{r}
+# Pour CH4
+tsdisplay(residuals(mod_ch44), main ="Résidus du modèle ARIMAX saisonnière de CH4 sur la période d'essaie(debut 2017-fin 2020)")
+```
+
+Les autocorrelations ne nous permettent pas d'affirmer clairement que les résidus du modèlé de CH4 sont du bruit blanc à cause du faite que certains sont légèrement sortie de la bande .
+
+#### Test de blancheur
+
+Faisons un test pour vérifier si les résidus sont du bruit blanc ou pas sous les hypothèses 
+```
+   H0 :"les résidus ne sont pas autocorrélés (→ c’est du bruit blanc)" contre 
+   H1 :"(alternative) : les résidus sont autocorrélés (→ modèle mal ajusté") au niveau de risque 5%
+```
+
+```{r}
+# Pour CO2
+Box.test(residuals(mod_co22), lag = 30, type = "Ljung-Box")
+
+```
+
+En ce qui concerne le test de blancheur, la p-valeur est supérieure à alpha(0.05), donc on ne rejette pas HO (les résidus  sont du bruit blancs) et donc on peut affirmer que résidus du modèle de CO2 sont du bruit blanc
+
+```{r}
+# Pour CH4
+Box.test(residuals(mod_ch44), lag = 30, type = "Ljung-Box")
+
+```
+
+En ce qui concerne le test de blancheur, la p-valeur est supérieure à alpha(0.05), donc on ne rejette pas HO (les résidus  sont du bruit blancs) et donc on peut affirmer que résidus du modèle de CH4 sont du bruit blanc
+
+#### Prévision
+
+```{r}
+library(forecast)
+```
+
+```{r}
+# Prédire CO2 sur 2021
+
+par(mfrow=c(1,2))
+
+pred_co2 <- forecast(mod_co22, h = 365, xreg = reg1_test) # h=365 tout l'année de 2021
+plot(pred_co2, main = "Prévision de CO2 pour 2021")
+plot(tco2,main="la série originale" )
+
+```
+
+
+```{r}
+# Prédire CH4 pour 2021
+
+par(mfrow=c(1,2))
+
+pred_ch4 <- forecast(mod_ch44, h = 365, xreg = reg2_test) # h=365 tout l'année de 2021
+plot(pred_ch4, main = "Prévision de CH4 pour 2021")
+plot(tch4,main="la série originale" )
+
+```
+Ces deux nous permettrons de faire une prédiction sur un long horizon en considérant les phénomènes caniculaires et de covid
+
+
+#### Verifions numériquement si les modèles obtenus sont de bons modèles
+
+##### Pour CO2
+
+```{r}
+mean(tco2); sd(tco2) 
+accuracy(mod_co22)[, "RMSE"] # racine de l'erreur quadratique moyenne
+```
+
+```{r}
+accuracy(mod_co22)[, "RMSE"] /sd(tco2)
+accuracy(mod_co22)[, "RMSE"] /abs(mean(tco2))
+```
+
+RMSE<Ecart-type : le modèle obtenue pour CO2 explique une part significative de la variabilité 
+Mais RMSE est sensiblement superieure à la moyenne,ce qui indique que le modèle est correct, mais pas très précis.
+
+
+##### Pour CH4 
+
+```{r}
+mean(tch4); sd(tch4) 
+accuracy(mod_ch44)[, "RMSE"] # racine de l'erreur quadratique moyenne
+```
+
+```{r}
+accuracy(mod_ch44)[, "RMSE"] /sd(tch4)
+accuracy(mod_ch44)[, "RMSE"] /abs(mean(tch4))
+```
+RMSE est inférieure à la moyenne et aussi inférieure à l'écart-type , donc le modèle obteu pour CH4 explique une bonne part de variabilité .
+
+
+##### Analyse de la prévision sur 2021
+
+-Pour CO2
+
+```{r}
+accuracy(tco2_test,pred_co2$mean)
+```
+MAPE est elevée donc les données surestimées et souestimées sont nombreuses , ce qui montre que la prédiction n'est aussi bonne que ça, mais c'est mieux qu'un modèle naif(répétition de la dernière sur le futur) a cause de (Theil's U <1)
+
+-Pour CH4
+
+```{r}
+accuracy(tch4_test,pred_ch4$mean)
+```
+
+MAPE est elevée donc les données surestimées et sous-estimées sont nombreuses , ce qui montre que la prédiction n'est aussi bonne que ça, mais c'est très mieux qu'un modèle naif(répétition de la dernière sur le futur) a cause de (Theil's U <1)
+
+
+
+
+
+### Modèle 2 : Se basant uniquement sur les années avant l'année de secheresse(2019)
+
+
+- Sur CO2 jusqu'à fin 2019
+
+
+```{r}
+# Creation de données
+tco2_17_19 <- window(tco2, end = c(2019, 365))  # co2 train ,données jusqu'a fin 2018
+reg_17_19<-rg1[1:length(tco2_17_19),] # regresseur train, données jusqu'a fin 2018
+
+tco2_20_21 <- window(tco2, start = c(2020, 1))  # co2 test ,données à partrir de debut 2019
+reg_20_21 <- rg1[(length(tco2_17_19) + 1):(length(tco2_17_19) + length(tco2_20_21)), ]# regresseur test, données à partrir de debut 2019
+```
+
+
+
+```{r}
+#Determination du modèle
+mod_co2_17_19 <- auto.arima(tco2_17_19, xreg = reg_17_19 )   
+summary(mod_co2_17_19)
+```
+
+- Sur CH4 jusqu'à fin 2019
+
+```{r}
+# Creation de données
+tch4_17_19 <- window(tch4, end = c(2019,365 )) # co2 train ,données jusqu'a fin 2020
+r_17_19<-rg2[1:length(tch4_17_19),] # regresseur train, données jusqu'a fin 2020
+
+tch4_20_21 <- window(tch4, start = c(2020, 1))  # co2 test ,données à partrir de debut 2018
+r_20_21 <- rg2[(length(tch4_17_19) + 1):(length(tch4_17_19) + length(tch4_20_21)), ]# regresseur test, données à partrir de debut 2018
+```
+
+
+```{r}
+# pour CH4
+mod_ch4_17_19 <- auto.arima(tch4_17_19, xreg = r_17_19 )   
+summary(mod_ch4_17_19)
+```
+
+
+
+
+##### Test de blancheurs sur les residus des modèles avant 2020 retenus
+
+-Pour CO2
+```{r}
+
+Box.test(residuals(mod_co2_17_19), lag = 30, type = "Ljung-Box")
+
+```
+En ce qui concerne le test de blancheur, la p-valeur est supérieure à alpha(0.05), donc on ne rejette pas HO (les résidus  sont du bruit blancs) et donc on peut affirmer que résidus du modèle de CO2 sont du bruit blanc
+
+-Pour CH4
+```{r}
+
+Box.test(residuals(mod_ch4_17_19), lag = 30, type = "Ljung-Box")
+
+```
+##### Faisons une prevision sur 2020-2021 
+
+
+-Pour CO2
+
+```{r}
+# Prédire CO2 sur 2020-2021
+
+par(mfrow=c(1,2))
+
+pred_co2_20_21 <- forecast(mod_co2_17_19, h = 365*2, xreg =reg_20_21  ) # h=365*4 tout l'année 2019-2021
+
+plot(pred_co2_20_21, main = "Prévision de CO2 pour 2020-2021")
+plot(tco2,main="la série originale" )
+
+```
+
+
+- Pour CH4
+
+```{r}
+# Prédire CH4 sur 2018-2021
+
+par(mfrow=c(1,2))
+
+pred_ch4_20_21 <- forecast(mod_ch4_17_19, h = 365*2, xreg =r_20_21  ) # toute l'année 2020-2021
+
+plot(pred_ch4_20_21, main = "Prévision de CH4 pour 2020-2021")
+plot(tch4,main="la série originale" ) 
+
+```
+
+
+
+Visuellement , on vois que les prévision sont bonne a cause de la dynamique et les saisonnalité qui sont concerver
+
+
+#### Analysons la qualité de prédiction
+
+```{r}
+accuracy(tco2_20_21,pred_co2_20_21$mean)
+```
+
+L'Erreur Moyenne Absolue en Pourcentage (MAPE) est élévée, ce qui montre qu'on a plus d'erreur que de bonne valeur dans la prediction   
+
+(Plus de detail sur MAPE a faire dans le rapport)
+
+
+```{r}
+accuracy(tch4_20_21,pred_ch4_20_21$mean)
+```
+L'Erreur Moyenne Absolue en Pourcentage (MAPE) est un peu élévée, ce qui montre qu'on a un peu d'erreur que de bonne valeur dans la prédiction. Les autres indicateurs montrent que le modèle est bon, mais aussi perfectible. 
+
+
+##### Comparaison des prévisions des deux modèles précédents sur 2021
+
+-CO2
+
+```{r}
+
+# Extraire les donnees de 2021 uniquement
+tco2_2021 <- window(tco2_20_21, start = c(2021, 1), end = c(2021, 365))
+pred_co2_2021 <- window(pred_co2_20_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tco2_2021, pred_co2_2021)
+
+```
+
+-CH4
+
+```{r}
+tch4_2021 <- window(tch4_20_21, start = c(2021, 1), end = c(2021, 365))
+pred_ch4_2021 <- window(pred_ch4_20_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tch4_2021, pred_ch4_2021)
+
+```
+
+
+
+#### Modèle 3 : Sans regresseurs
+
+-Training set
+
+```{r}
+# Pour CO2
+tco2_train <- window(tco2, end = c(2020, 365))  # co2 train ,données jusqu'a fin 2020
+
+
+# Pour CH4
+tch4_train <- window(tch4, end = c(2020, 365)) # co2 train ,données jusqu'a fin 2020
+
+```
+
+-Test set
+
+```{r}
+# Pour CO2
+tco2_test <- window(tco2, start = c(2021, 1))  # co2 test ,données à partrir de debut 2021
+
+# Pour CH4
+tch4_test <- window(tch4, start = c(2021, 1))  # ch4 test ,données à partrir de debut 2021
+
+```
+
+-Modelisation
+
+```{r}
+# pour CO2
+mod_co2_sr <- auto.arima(tco2_train )   
+summary(mod_co2_sr)
+```
+Le modèle de CO2 sans regresseur est stationnaire
+
+```{r}
+# pour CH4
+mod_ch4_sr <- auto.arima(tch4_train )   
+summary(mod_ch4_sr)
+```
+Le modèle de CH4 sans regresseur est stationnaire, ce qui nous amène à dire que la non-stationnarité du modèle avec regresseur est liée aux regresseurs
+
+-Prevision sur 2021
+
+```{r}
+# Prédire CO2 sur 2021
+
+par(mfrow=c(1,2))
+
+pred_co2_sr <- forecast(mod_co2_sr, h = 365) # h=365 toute l'année de 2021
+plot(pred_co2_sr, main = "Prévision de CO2 pour 2021")
+plot(tco2,main="la série originale" )
+
+```
+
+
+```{r}
+# Prédire CH4 pour 2021
+
+par(mfrow=c(1,2))
+
+pred_ch4_sr <- forecast(mod_ch4_sr, h = 365, xreg = reg2_test) # h=365 tout l'année de 2021
+plot(pred_ch4_sr, main = "Prévision de CH4 pour 2021")
+plot(tch4,main="la série originale" )
+
+```
+
+# Analysons la qualité de prediction sur 2021, du modèle sans regresseur
+
+-Pour CO2
+
+```{r}
+accuracy(tco2_test,pred_co2_sr$mean)
+```
+
+-Pour CH4
+
+```{r}
+accuracy(tch4_test,pred_ch4_sr$mean)
+```
+
+Ici, les Theil's U des previsions de CO2 et CH2 sont très élevées par rapport aux modèle avec regresseurs, donc les modèles avec regresseurs sont mieux .
+
+
+
+
+
+#### Superposition des données prédites sur les observées des deux premières modèles
+
+###### Prévision sur 2020-2021
+
+- Pour CO2
+
+```{r}
+tco2_20_21 <- window(tco2, start = c(2020, 1)) 
+matrix_1<-cbind(tco2_20_21,pred_co2_20_21$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_1, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CO2", 
+     main = "Superposition de CO2 prédit et la série observée 2020-2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CO2 Observé","CO2 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+```
+
+On voit ici que la superposistion n'est pas bien faite.Donc sans les chiffres, on peut dire que la prévision n'est pas bonne avec ce modèle .
+
+-Pour CH4
+```{r}
+tch4_20_21 <- window(tch4, start = c(2020, 1)) 
+matrix_2<-cbind(tch4_20_21,pred_ch4_20_21$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_2, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CH4", 
+     main = "Superposition de CH4 prédit et la série observée 2020-2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CH4 Observé","CH4 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+
+Ici aussi, on voit que la superposistion n'est pas bien faite.Donc sans les chiffres, on peut dire que la prévision n'est pas bonne avec ce modèle et ça ce fait plus remarqué en 2021 .
+
+###### Prévision sur 2021
+
+
+- Pour CO2
+
+```{r}
+tco2_21 <- window(tco2, start = c(2021, 1)) 
+matrix_3<-cbind(tco2_21,pred_co2$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_3, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CO2", 
+     main = "Superposition de CO2 prédit et la série observée 2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CO2 Observé","CO2 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+La prévision de CO2 de ce modèle(2017-2020) semble être mieux sur 2021 que celle du modèle(2017-2019). Mais n'est pas bien superposé
+
+-Pour CH4
+```{r}
+tch4_21 <- window(tch4, start = c(2021, 1)) 
+matrix_4<-cbind(tch4_21,pred_ch4$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_4, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CH4", 
+     main = "Superposition de CH4 predit et la serie observee en 2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CH4 Observé","CH4 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+
+Voyant ça,on remarque que la superposition n'est toujours pas bien faite, et il semble que ce modèle est pire que celui conçu sur 2017-2019
+
+
+
+
+### Modèle 4 : Se basant uniquement sur les années avant l'année de secheresse(2019)
+
+-CO2
+
+
+```{r}
+# Creation de données
+tco2_17_18 <- window(tco2, end = c(2018, 365))  # co2 train ,données jusqu'a fin 2018
+reg1_17_18<-rg1[1:length(tco2_17_18),] # regresseur train, données jusqu'a fin 2018
+
+tco2_19_21 <- window(tco2, start = c(2019, 1))  # co2 test ,données à partrir de debut 2019
+reg1_19_21 <- rg1[(length(tco2_17_18) + 1):(length(tco2_17_18) + length(tco2_19_21)), ]# regresseur test, données à partrir de debut 2019
+```
+
+
+
+```{r}
+#Determination du modèle
+mod_co2_17_18 <- auto.arima(tco2_17_18, xreg = reg1_17_18 )   
+summary(mod_co2_17_18)
+```
+
+
+-CH4
+
+```{r}
+# Creation de données
+tch4_17_18 <- window(tch4, end = c(2018,365 )) # co2 train 
+reg2_17_18<-rg2[1:length(tch4_17_18),] # regresseur train, 
+
+tch4_19_21 <- window(tch4, start = c(2019, 1))  # co2 test ,données à partrir de debut 2018
+reg2_19_21 <- rg2[(length(tch4_17_18) + 1):(length(tch4_17_18) + length(tch4_19_21)), ]# regresseur test, données à partrir de debut 2018
+```
+
+
+```{r}
+# pour CH4
+mod_ch4_17_18 <- auto.arima(tch4_17_18, xreg = reg2_17_18 )   
+summary(mod_ch4_17_18)
+```
+-Prevision
+-CO2
+
+```{r}
+# Prédire CO2 sur 2019-2021
+
+par(mfrow=c(1,2))
+
+pred_co2_19_21 <- forecast(mod_co2_17_18, h = 365*3, xreg =reg1_19_21  ) # h=365*4 tout l'année 2019-2021
+
+plot(pred_co2_19_21, main = "Prévision de CO2 pour 2019-2021")
+plot(tco2,main="la série originale" )
+
+```
+
+-CH4
+
+```{r}
+# Prédire CH4 sur 2019-2021
+
+par(mfrow=c(1,2))
+
+pred_ch4_19_21 <- forecast(mod_ch4_17_18, h = 365*3, xreg =reg2_19_21  ) # h=365*4 tout l'année 2019-2021
+
+plot(pred_ch4_19_21, main = "Prévision de CH4 pour 2019-2021")
+plot(tch4,main="la série originale" )
+
+```
+
+##### Qualité de prevision
+
+```{r}
+accuracy(tco2_19_21,pred_co2_19_21$mean)
+```
+
+
+```{r}
+accuracy(tch4_19_21,pred_ch4_19_21$mean)
+```
+
+
+#### Superposition des données prédites sur les observées des deux  modèles
+
+###### Prévision sur 2019-2021
+
+- Pour CO2
+
+```{r}
+tco2_19_21 <- window(tco2, start = c(2019, 1)) 
+matrix_7<-cbind(tco2_19_21,pred_co2_19_21$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_7, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CO2", 
+     main = "Superposition de CO2 prédit et la série observée 2019-2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CO2 Observé","CO2 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+```
+
+-Pour CH4
+```{r}
+tch4_20_21 <- window(tch4, start = c(2019, 1)) 
+matrix_8<-cbind(tch4_19_21,pred_ch4_19_21$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_8, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CH4", 
+     main = "Superposition de CH4 prédit et la série observée 2019-2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CH4 Observé","CH4 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+
+
+
+###### Prévision sur 2021
+
+
+- Pour CO2
+
+```{r}
+tco2_21 <- window(tco2, start = c(2021, 1)) 
+matrix_9<-cbind(tco2_21,pred_co2$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_9, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CO2", 
+     main = "Superposition de CO2 prédit et la série observée 2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CO2 Observé","CO2 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+
+
+
+-Pour CH4
+```{r}
+tch4_21 <- window(tch4, start = c(2021, 1)) 
+matrix_10<-cbind(tch4_21,pred_ch4$mean) #,pred_co2_19_21$upper,pred_co2_19_21$lower)
+
+plot(matrix_10, 
+     plot.type = "single", 
+     lty = c(1,2),          # Types de lignes : continue, pointillée, pointillée
+     col = c("black","red"),  # Couleurs : original, borne inférieure, borne supérieure
+     xlab = "dates", 
+     ylab = "CH4", 
+     main = "Superposition de CH4 predit et la serie observee en 2021 ",
+     cex.main = 1.2)
+
+legend(par("usr")[1],par("usr")[4], 
+       legend = c("CH4 Observé","CH4 prédit"),
+       col = c("black","red"), 
+       lty = c(1,2),lwd=1,
+       bty = "n")
+
+```
+
+
+##### Voyons maintenant la qualité de prevision des 3 modèles sur 2021
+
+######### Pour le modèle de 2017-2020
+-Pour CO2
+
+```{r}
+accuracy(tco2_test,pred_co2$mean)
+```
+
+-Pour CH4
+
+```{r}
+accuracy(tch4_test,pred_ch4$mean)
+```
+
+
+
+######### Pour le modèle de 2017-2019
+-CO2
+```{r}
+
+# Extraire les donnees de 2021 uniquement
+tco2_21 <- window(tco2_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_co2_2021 <- window(pred_co2_20_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tco2_21, pred_co2_2021)
+
+```
+
+-CH4
+
+```{r}
+tch4_2021 <- window(tch4_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_ch4_2021 <- window(pred_ch4_20_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tch4_2021, pred_ch4_2021)
+
+```
+
+
+
+######### Pour le modèle de 2017-2018
+
+-CO2
+
+```{r}
+
+# Extraire les donnees de 2021 uniquement
+tco2_21 <- window(tco2_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_co2_2021 <- window(pred_co2_19_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tco2_21, pred_co2_2021)
+
+```
+
+-CH4
+
+```{r}
+tch4_21 <- window(tch4_19_21, start = c(2021, 1), end = c(2021, 365))
+pred_ch4_2021 <- window(pred_ch4_19_21$mean, start = c(2021, 1), end = c(2021, 365))
+
+accuracy(tch4_21, pred_ch4_2021)
+
+```
+
+
+#### Modélisation sur les données mensuelles
+
+Tout d'abord, on finalise la création des données mensuelles des gaz à effet de serre, et en suites celui des composantes.
+
+-Pour CO2
+```{r}
+
+co2_mois <- ts(data_mois$FCO2, start = c(2017, 1), frequency = 12)
+
+plot(co2_mois, main = "Série temporelle mensuelle de CO2")
+
+```
+
+A partir de l'année 2019, on observe l'augmentation des flux de CO2 dans les mois d'été, Ce qui montre la croissance de la tendance observée sur la décomposition des données journalières
+
+
+- Pour CH4
+
+```{r}
+ch4_mois <- ts(data_mois$FCH4, start = c(2017, 1), frequency = 12)
+
+plot(ch4_mois, main = "Série temporelle mensuelle de CH4")
+
+```
+ Ici, on observe une décroissance des flux de CH4 en été 2020, et c'est revenu presqu'au normale en 2021, ce qui justifie les analyses et conclusion faites sur le choix du modèle (2017-2018), pour la prévision de CH4 .
+ 
+ 
+-- Passons a la formations des composantes principales mensuelles 
+
+
+```{r}
+
+comp <- data.frame(comp1 = acp$li[,1],comp2 = acp$li[,2],comp3 = acp$li[,3],comp4 = acp$li[,4])
+
+# Agréger par mois en prenant la moyenne
+cp_mois <- aggregate(comp, by = list(AnMois), FUN = mean)
+
+# Renommer la première colonne
+colnames(cp_mois)[1] <- "AnMois"
+
+head(cp_mois)
+
+```
+
+
+-  Modélisation
+
+-- C02
+
+On va tout d'abord définir le régresseur.
+
+```{r}
+reg_mois <- as.matrix(cp_mois[, c("comp1", "comp2", "comp3", "comp4")])
+```
+
+Ensuite à la création des données d'entrainement et test
+
+```{r}
+co2_mois_train <- window(co2_mois, end = c(2020, 12))
+reg_mois_17_20 <- reg_mois[1:length(co2_mois_train), ]
+
+co2_mois_test <- window(co2_mois, start = c(2021, 1))
+reg_mois_21 <- reg_mois[(length(co2_mois_train)+1):length(co2_mois), ]
+
+```
+
+
+```{r}
+mod_co2_mois <- auto.arima(co2_mois_train, xreg = reg_mois_17_20)
+summary(mod_co2_mois)
+
+```
+-Le modèle capture la saisonnalité annuelle grâce à l’AR saisonnier et l’effet dynamique grâce à MA1.
+-Les composantes principales, surtout comp3 et comp1, apportent une bonne partie de l’explication de la tendance et de la variabilité mensuelle.
+-Le MAPE élevé montre qu’il reste une variabilité difficile à prédire.
+
+et l'équation du processus retenu par le modèle est :
+$(1−0.3711B12)y_t=−36.51+9.81comp1_t+4.53comp2_t+22.99comp3_t−4.63comp4_t+(1+0.6513B)ε_t$
+
+
+--- Vérifions la nature des residus avec le test de blancheur
+
+
+```{r}
+
+Box.test(residuals(mod_co2_mois), lag = 30, type = "Ljung-Box")
+
+```
+le resultat de ce test nous amène à accepter la blancheur des residus.
+
+```{r}
+par(mfrow=c(1,2))
+
+pred_co2_mois <- forecast(mod_co2_mois,h=365, xreg = reg_mois_21)
+
+
+plot(pred_co2_mois, main = "Prévision sur 2021")
+plot(co2_mois,main="la série originale" ) 
+```
+
+La prévision sur 2021 suit la dynamique et la tendance  du flux du CO2 observé préalablement avec les données journalières. Certainement, la prévision sur une longue horizon donnera la réduction progrèssive du chronogramme->plus de consommation de CO2 par la tourbière en été ->plus de sa production par les activités humaines
+
+--CH4
+
+Comme retenu sur la série journalière de CH4, on fait un modèle sur l'année 2017-2018 avec les données mensuelles
+
+```{r}
+
+ch4_mois_train <- window(ch4_mois, end = c(2018, 12))
+reg_mois_17_18 <- reg_mois[1:length(ch4_mois_train), ]
+
+ch4_mois_test <- window(ch4_mois, start = c(2019, 1))
+reg_mois_19_21 <- reg_mois[(length(ch4_mois_train)+1):length(ch4_mois), ]
+
+```
+
+
+
+```{r}
+mod_ch4_mois <- auto.arima(ch4_mois_train, xreg = reg_mois_17_18)
+summary(mod_ch4_mois)
+```
+
+- On suppose que tout le signal est capturé par les régressseurs.
+- Le coefficient le plus important en valeur absolue est pour la comp3 (+0.1779), ce qui montre que cette composante explique la plus grande part de variabilité de CH4.
+
+
+Le modèle est globalement simple et explique bien la série sans dynamique résiduelle (ACF1 -0.23, pas d’autocorrélation notable). Et aussi les erreurs d'entrainement mesurées sont faible.
+
+ 
+ 
+L'équation de cette trajectoire s'écrit comme suit :
+
+$y_t=−0.5409+0.0517comp1_t+0.0892comp2_t+0.1779comp3_t−0.1448comp4_t+ε_t$
+
+
+
+Vérifions donc si les residus sont gaussien avec le test de Shapiro-Wilk, vu que notre modèle ici est une regression
+
+```{r}
+shapiro.test(residuals(mod_ch4_mois))
+
+```
+
+On valide la normalité des residus, donc notre regression est valide.
+
+
+```{r}
+
+par(mfrow=c(1,2))
+
+pred_ch4_mois <- forecast(mod_ch4_mois,h=3, xreg =reg_mois_19_21 )
+
+
+plot(pred_ch4_mois, main = "Prévision sur 2021")
+plot(ch4_mois,main="la série originale" ) 
+```
+
+Ici, la prévison nous montre une augmentation de la quantité de CH4 libérés en 2019,2020, par rapport aux années précédentes,et qui revient presqu'au rythme de l'année 2017 en 2021 .
+
+
+
