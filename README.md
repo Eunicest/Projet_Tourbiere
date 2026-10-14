@@ -1,68 +1,63 @@
-# 🌿 Analyse Multidimensionnelle et Temporelle des Données de Tourbières
-*Multidimensional and Time Series Analysis of Peatland Data*
+# 🌿 Analyse Multidimensionnelle et Temporelle des Données de Tourbières (La Guette)
 
-🌍 **[English version below](#english-version)**
+## 🎯 Résultats Clés
+*(Pour le détail de l'analyse, consultez le rapport : `projettourbière.pdf`)*
+
+* **Analyse en Composantes Principales (ACP) :** 
+* **Séries Temporelles et Prévision :** Les flux de gaz (CO2/CH4) ont été modélisés à l'aide des composantes de l'ACP. Le meilleur ajustement a été obtenu avec un modèle ** **, permettant des prévisions fiables avec une erreur [RMSE / MAPE] de ****.
 
 ---
 
-## 🇫🇷 Version Française
+## 📝 Contexte du projet
+Projet réalisé dans le cadre du Master 1 Mathématiques Appliquées et Statistique de l'Université d'Orléans (Programme de recherche Junon). 
+L'objectif est d'analyser les données bio-météorologiques de la tourbière de La Guette (2017-2021) afin de comprendre la dynamique de cet écosystème face aux flux de gaz à effet de serre (CO2 et CH4).
 
-### 📝 Description du projet
-Ce projet a été réalisé dans le cadre du Master 1 en Mathématiques Appliquées et Statistique à l'Université d'Orléans (Programme de recherche Junon). 
-L'objectif est d'analyser les données bio-météorologiques de la tourbière de La Guette (2017-2021) afin de mieux comprendre son écosystème, et en particulier la dynamique des flux de gaz à effet de serre (CO2 et CH4).
-
-Le projet s'articule autour de trois grands axes :
-1. **Nettoyage et Imputation des données :** Gestion des valeurs manquantes massives.
-2. **Analyse en Composantes Principales (PCA/ACP) :** Étude des corrélations et oppositions entre les dynamiques thermiques, hydrologiques et atmosphériques.
-3. **Séries Temporelles (Time Series) :** Décomposition, stationnarisation et modélisation prédictive des flux en utilisant les composantes de l'ACP comme régresseurs.
+Le projet s'articule autour de :
+1. **L'Imputation des données :** Gestion des valeurs manquantes massives (`missMDA`).
+2. **L'ACP :** Étude des dynamiques thermiques, hydrologiques et atmosphériques.
+3. **Séries Temporelles :** Décomposition, stationnarisation et modélisation (ARIMA).
 
 ### 🛠️ Outils et Technologies
-* **Langage & Environnement :** R, R Markdown
-* **Méthodes statistiques :** PCA (Principal Component Analysis), Modélisation de Séries Temporelles (ARIMA)
-* **Packages principaux :** `FactoMineR`, `ade4`, `factoextra`, `ggplot2`, `corrplot`, `dplyr`, `tidyr`, `missMDA`, `forecast`, `tseries`
+* **Environnement :** R, R Markdown
+* **Méthodes :** ACP, Modélisation ARIMA
+* **Packages clés :** `FactoMineR`, `ade4`, `factoextra`, `ggplot2`, `corrplot`, `dplyr`, `tidyr`, `missMDA`, `forecast`, `tseries`
 
 ### 📂 Structure du dépôt
-* `projettourbière.pdf` : Le rapport final complet et détaillé du projet.
-* `projettourbière.tex` : Le code source LaTeX du rapport final.
-* `projetfinal.Rmd` / `projetfinal.html` : Notebook R contenant la première partie de l'analyse (exploration, nettoyage, et Analyse en Composantes Principales).
-* `projet_tourbiere_modelisation.Rmd` / `projet_tourbiere_modelisation.html` : Notebook R contenant la seconde partie (séries temporelles et prévisions).
+Pour une lecture fluide, les rendus finaux sont à la racine, et les codes sources sont regroupés :
+* 📄 `projettourbière.pdf` : Le rapport final complet.
+* 📊 `projetfinal.html` : Notebook interactif (exploration, nettoyage, ACP).
+* 📈 `projet_tourbiere_modelisation.html` : Notebook interactif (séries temporelles).
+* 📁 `src/` : Dossier contenant les codes sources (`.Rmd`, `.tex`, `figure-latex/`).
 
-> ⚠️ **Note sur les données :** Le jeu de données original n'est pas inclus dans ce dépôt (données issues du programme de recherche Junon). Les scripts et notebooks sont partagés à des fins de démonstration technique et méthodologique. Vous pouvez consulter les fichiers `.html` pour visualiser le code exécuté et les résultats obtenus.
+> ⚠️ **Note sur les données :** Les données originales (programme Junon) ne sont pas incluses. Les fichiers `.html` permettent de visualiser le code exécuté et les résultats.
 
-### 🚀 Prérequis
-Si vous souhaitez tester ou adapter le code avec vos propres données, vous aurez besoin des bibliothèques suivantes :
-```R
-install.packages(c("FactoMineR", "ade4", "factoextra", "ggplot2", "corrplot", "dplyr", "tidyr", "missMDA", "forecast", "tseries", "dygraphs", "xts"))
-```
+---
+<br>
 
+<details>
+<summary>🇬🇧 <b>English version (Click to expand)</b></summary>
 
-## 🇬🇧 English Version
+## 🎯 Key Results
+*(For the full analysis, read the report: `projettourbière.pdf`)*
 
-### 📝 Project Description
-This project was carried out as part of the 1st year of the Master's degree in Applied Mathematics and Statistics at the University of Orléans (Junon research program).
-The objective is to analyze bio-meteorological data from the La Guette peatland (2017-2021) to better understand its ecosystem, and in particular the dynamics of greenhouse gas fluxes (CO2 and CH4).
+* **Principal Component Analysis (PCA):** 
+* **Time Series & Forecasting:** Gas fluxes (CO2/CH4) were modeled using PCA components as regressors. The best fit was achieved with an ** ** model, yielding forecasts with an [RMSE / MAPE] error of ** **.
 
-The project is structured around three main axes:
-* **Data Cleaning and Imputation:** Handling of massive missing values.
-* **Principal Component Analysis (PCA):** Study of the correlations and oppositions between thermal, hydrological, and atmospheric dynamics.
-* **Time Series:** Decomposition, stationarization, and predictive modeling of fluxes using PCA components as regressors.
+---
+
+## 📝 Project Context
+Project carried out as part of the 1st year of the Master's in Applied Mathematics and Statistics at the University of Orléans (Junon research program). 
+The objective is to analyze bio-meteorological data from the La Guette peatland (2017-2021) to understand the dynamics of greenhouse gas fluxes (CO2 and CH4).
 
 ### 🛠️ Tools and Technologies
-* **Language & Environment:** R, R Markdown
-* **Statistical Methods:** PCA (Principal Component Analysis), Time Series Modeling (ARIMA)
-* **Main Packages:** `FactoMineR`, `ade4`, `factoextra`, `ggplot2`, `corrplot`, `dplyr`, `tidyr`, `missMDA`, `forecast`, `tseries`
+* **Environment:** R, R Markdown
+* **Methods:** PCA, Time Series Modeling (ARIMA)
+* **Core Packages:** `FactoMineR`, `ade4`, `factoextra`, `ggplot2`, `corrplot`, `dplyr`, `tidyr`, `missMDA`, `forecast`, `tseries`
 
 ### 📂 Repository Structure
-* `projettourbière.pdf`: The complete and detailed final report of the project.
-* `projettourbière.tex`: The LaTeX source code of the final report.
-* `projetfinal.Rmd` / `projetfinal.html`: R Notebook containing the first part of the analysis (exploration, cleaning, and Principal Component Analysis).
-* `projet_tourbiere_modelisation.Rmd` / `projet_tourbiere_modelisation.html`: R Notebook containing the second part (time series and forecasting).
-
-> ⚠️ **Note on Data:** The original dataset is not included in this repository (data from the Junon research program). The scripts and notebooks are shared for technical and methodological demonstration purposes. You can consult the `.html` files to view the executed code and the results obtained.
-
-### 🚀 Prerequisites
-If you want to test or adapt the code with your own data, you will need the following libraries:
-
-```R
-install.packages(c("FactoMineR", "ade4", "factoextra", "ggplot2", "corrplot", "dplyr", "tidyr", "missMDA", "forecast", "tseries"))
-```
+For a smooth reading experience, final outputs are at the root, and source codes are grouped:
+* 📄 `projettourbière.pdf`: The complete final report.
+* 📊 `projetfinal.html`: Interactive notebook (exploration, cleaning, PCA).
+* 📈 `projet_tourbiere_modelisation.html`: Interactive notebook (time series).
+* 📁 `src/`: Folder containing all source codes (`.Rmd`, `.tex`, `figure-latex/`).
+</details>
